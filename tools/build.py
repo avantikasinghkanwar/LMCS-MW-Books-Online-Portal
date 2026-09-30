@@ -63,7 +63,7 @@ def make(name, voice, text):
 
 
 def write_sw_list(names):
-    files = ['./', 'index.html', 'style.css', 'content.js', 'app.js', 'config.js',
+    files = ['./', 'index.html', 'style.css', 'content.js', 'activities.js', 'app.js', 'config.js',
              'manifest.webmanifest', 'icon-192.png', 'icon-512.png']
     files += ['audio/%s.m4a' % n for n in sorted(names)]
     sw_path = os.path.join(ROOT, 'sw.js')

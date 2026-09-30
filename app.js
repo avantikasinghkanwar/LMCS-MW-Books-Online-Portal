@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v2';
+  var APP_VERSION = 'm1-v3';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
 
@@ -94,7 +94,7 @@
       lastInfo = info;
       visit = {
         info: info, start: now(), last: now(), active: 0,
-        n: { touches: 0, traces: 0, sounds: 0, right: 0, wrong: 0, videos: 0, colours: 0 }
+        n: { touches: 0, traces: 0, sounds: 0, right: 0, wrong: 0, videos: 0, colours: 0, activity: 0 }
       };
     }
     function activity() {
@@ -113,13 +113,16 @@
       // Time after the last touch counts only up to the idle limit.
       var active = v.active + Math.min(t - v.last, CONFIG.IDLE_MINUTES * 60000);
       var seconds = Math.round((t - v.start) / 1000);
-      if (seconds < 2) return; // passing through a page doesn't count as a visit
+      var acted = 0;
+      for (var k in v.n) if (k !== 'touches') acted += v.n[k]; // the tap that leaves the page doesn't count
+      // Passing through a page doesn't count as a visit, unless something was actually done on it.
+      if (seconds < 2 && !acted) return;
       var row = {
         start: stamp(v.start), end: stamp(t), seconds: seconds, active_seconds: Math.round(active / 1000),
         campus: s.campus || '', class_name: s.cls || '', teacher: s.teacher || '', panel: s.panel || '',
         book: v.info.book, page: v.info.page, item: v.info.item, part: v.info.part,
         touches: v.n.touches, traces: v.n.traces, sound_taps: v.n.sounds, game_right: v.n.right,
-        game_wrong: v.n.wrong, video_plays: v.n.videos, colour_taps: v.n.colours, version: APP_VERSION
+        game_wrong: v.n.wrong, video_plays: v.n.videos, colour_taps: v.n.colours, activity_done: v.n.activity ? 1 : 0, version: APP_VERSION
       };
       var q = store(QUEUE) || [];
       q.push(row);
@@ -323,7 +326,7 @@
     return '<span class="emoji">🎨</span>';
   }
   function tabsFor(it) {
-    if (it.type === 'letter') return [['meet', '1 · Meet ' + it.letter, it.pages[0]], ['words', '2 · Words & game', it.pages[1]]];
+    if (it.type === 'letter') return [['meet', '1 · Meet ' + it.letter, it.pages[0]], ['words', '2 · Words & game', it.pages[1]], ['activity', '3 · Activity', it.pages[0]]];
     if (it.type === 'prewriting') return [['trace', '1 · Trace the picture', it.pages[0]], ['practice', '2 · Practice', it.pages[1]]];
     return [['main', '', it.pages.join('–')]];
   }
@@ -387,7 +390,7 @@
   function head(it, b, i, tab) {
     var tabs = tabsFor(it);
     var tabHtml = tabs.length > 1 ? '<div class="tabs">' + tabs.map(function (t) {
-      return '<button class="tab' + (t[0] === tab ? ' on' : '') + '" data-go="b' + b + '/' + i + '/' + t[0] + '">' + esc(t[1]) + '</button>';
+      return '<button class="tab' + (t[0] === tab ? ' on' : '') + '" data-go="b' + b + '/' + i + '/' + t[0] + '">' + esc(t[1]) + (t[0] === 'activity' && it.type === 'letter' && activityDone(it.letter) ? ' ✔' : '') + '</button>';
     }).join('') + '</div>' : '';
     return '<div class="screen-head"><h1>' + itemTitle(it) + '</h1><span class="page-tag">Book ' + b + ' · ' + pageLabel(it.pages) + '</span>' + tabHtml + '</div>';
   }
@@ -470,6 +473,51 @@
         $('again').onclick = newRound;
         $('ask').onclick = function () { play('l_' + k + '_question'); };
         newRound();
+      }
+    };
+  }
+
+  // Which activities this panel has marked as done (kept on the panel, sent to the sheet when ticked).
+  function activityDone(key) { var d = store('lmcs.done') || {}; return d[key] || ''; }
+  function setActivityDone(key, val) {
+    var d = store('lmcs.done') || {};
+    if (val) d[key] = val; else delete d[key];
+    store('lmcs.done', d);
+  }
+  function today() { var d = new Date(); return d.getDate() + ' ' + ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getMonth()]; }
+
+  function renderActivity(L) {
+    var A = ACTIVITIES[L.key];
+    var mats = /^none/i.test(A.materials) ? 'No materials needed' : A.materials;
+    var html =
+      '<div class="split act">' +
+      '<div class="panel">' +
+      '<div class="act-label">🧺 Montessori activity</div><div class="act-text">' + esc(A.montessori) + '</div>' +
+      '<div class="act-label">🧰 Materials</div><div class="act-mats">' + esc(mats) + '</div>' +
+      '</div>' +
+      '<div class="panel">' +
+      '<div class="act-label">🗣️ Listening &amp; speaking</div><div class="act-text">' + esc(A.speaking) + '</div>' +
+      '<div class="controls"><button class="btn soft" id="hear">🔊 Hear the words</button></div>' +
+      '<div class="done-box" id="doneBox"></div>' +
+      '</div></div>';
+    return {
+      html: html,
+      init: function () {
+        $('hear').onclick = function () { play(L.words.map(function (w) { return w.audio; })); };
+        function paint() {
+          var when = activityDone(L.key);
+          $('doneBox').innerHTML = when
+            ? '<div class="done yes">✔ Done on ' + esc(when) + '</div><button class="btn soft small-btn" id="undo">Undo</button>'
+            : '<button class="btn big-done" id="markDone">✓ We did this activity</button>';
+          if (when) $('undo').onclick = function () { setActivityDone(L.key, ''); paint(); refreshTabs(); };
+          else $('markDone').onclick = function () { setActivityDone(L.key, today()); Tracker.count('activity'); cheer(); paint(); refreshTabs(); };
+        }
+        function refreshTabs() {
+          each(app.querySelectorAll('.tab'), function (t) {
+            if (/activity$/.test(t.getAttribute('data-go'))) t.innerHTML = '3 · Activity' + (activityDone(L.key) ? ' ✔' : '');
+          });
+        }
+        paint();
       }
     };
   }
@@ -586,7 +634,7 @@
     if (it.type === 'letter') {
       var L = C.LETTERS[it.letter];
       setTheme(L.color, L.tint);
-      body = tab === 'words' ? renderWords(L) : renderMeet(L);
+      body = tab === 'words' ? renderWords(L) : tab === 'activity' ? renderActivity(L) : renderMeet(L);
     } else if (it.type === 'prewriting') {
       setTheme('#8b7bd8', '#EFEBFB');
       body = tab === 'practice' ? renderPractice(it) : renderTrace(it);
@@ -609,6 +657,7 @@
       'Tap <b>▶ Show me</b>. The letter draws itself (1, 2, 3…). Children air-draw with you.',
       'Call 2–3 children to trace on the panel. <b>Clear</b> between turns.',
       '<b>Words &amp; game:</b> tap each picture; children repeat and listen for the first sound. Then a child taps the picture that starts with the letter.',
+      '<b>Activity:</b> do the Montessori activity, then the listening-speaking task. Tap <b>We did this activity</b> so the school can see it was done.',
       'Book: intro page = <b>finger-trace only</b>, no pencil. Colouring page = colour the big picture.'
     ],
     prewriting: [
@@ -627,7 +676,9 @@
     var type = it ? it.type : 'home';
     var ref = it ? '<div class="book-ref">📖 Book ' + b + ' · page ' + page + '</div>' : '';
     var waiting = Tracker.waiting();
-    $('drawerBody').innerHTML = ref + '<ol>' + NOTES[type].map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
+    var tip = it && it.type === 'letter' && ACTIVITIES[it.letter] && ACTIVITIES[it.letter].sound
+      ? '<div class="sound-tip">🗣️ <b>How to say the sound:</b> ' + esc(ACTIVITIES[it.letter].sound) + '</div>' : '';
+    $('drawerBody').innerHTML = ref + tip + '<ol>' + NOTES[type].map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
       '<hr><p class="muted small">Class records waiting to send: ' + waiting + (CONFIG.SHEET_URL ? '' : ' (sheet not connected yet)') + '</p>' +
       '<button class="btn soft" data-go="setup">⚙ Panel setup</button>';
   }

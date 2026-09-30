@@ -4,10 +4,11 @@
  */
 var PORTAL_HEADERS = ['Start', 'End', 'Seconds', 'Active seconds', 'Campus', 'Class', 'Teacher', 'Panel',
   'Book', 'Page', 'Item', 'Part', 'Touches', 'Traces', 'Sound taps', 'Game right', 'Game wrong',
-  'Video plays', 'Colour taps', 'Version', 'Received'];
+  'Video plays', 'Colour taps', 'Version', 'Received', 'Activity done'];
 var PORTAL_KEYS = ['start', 'end', 'seconds', 'active_seconds', 'campus', 'class_name', 'teacher', 'panel',
   'book', 'page', 'item', 'part', 'touches', 'traces', 'sound_taps', 'game_right', 'game_wrong',
   'video_plays', 'colour_taps', 'version'];
+var PORTAL_LAST_KEY = 'activity_done';   // goes in column V, after "Received"
 var PORTAL_CLASS_HEADERS = ['Campus', 'Class', 'Teacher', 'Panel', 'Last seen', 'Book', 'Page', 'On screen',
   'Visits', 'Active minutes'];
 
@@ -21,7 +22,7 @@ function handlePortal(data) {
     return PORTAL_KEYS.map(function (k) {
       if (k === 'start' || k === 'end') return toDate(r[k]);
       return r[k] === undefined ? '' : r[k];
-    }).concat([now]);
+    }).concat([now, r[PORTAL_LAST_KEY] === undefined ? '' : r[PORTAL_LAST_KEY]]);
   });
   visits.getRange(visits.getLastRow() + 1, 1, rows.length, PORTAL_HEADERS.length).setValues(rows);
   updateClasses(ss, data.rows);
@@ -54,7 +55,12 @@ function setupPortal() {
   var ss = openSheetFor('portal');
   ss.setSpreadsheetTimeZone('Asia/Kolkata');
   sheet(ss, 'Where classes are', PORTAL_CLASS_HEADERS);
-  sheet(ss, 'Visits', PORTAL_HEADERS);
+  var visitsTab = sheet(ss, 'Visits', PORTAL_HEADERS);
+  // Make sure row 1 has every header, including the newest one (Activity done).
+  visitsTab.getRange(1, 1, 1, PORTAL_HEADERS.length).setValues([PORTAL_HEADERS]).setFontWeight('bold').setBackground('#FFF1C2');
+  summary(ss, 'Activities done',
+    "=QUERY(Visits!A:V, \"select E, F, G, K, count(A), max(B) where V = 1 group by E, F, G, K order by E, F, K " +
+    "label count(A) 'Times marked done', max(B) 'Last done'\", 1)");
   summary(ss, 'By page',
     "=QUERY(Visits!A:U, \"select I, J, K, L, count(A), sum(D)/60, sum(M), sum(N), sum(O), sum(P), sum(Q) where A is not null group by I, J, K, L order by I, K " +
     "label count(A) 'Visits', sum(D)/60 'Active minutes', sum(M) 'Touches', sum(N) 'Traces', sum(O) 'Sound taps', sum(P) 'Game right', sum(Q) 'Game wrong'\", 1)");

@@ -207,6 +207,17 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 .chart.colour button { font-size: 96px; color: #fff; -webkit-text-stroke: 3px #3a3a3c; paint-order: stroke; }
 .chart.colour button.filled { color: var(--c); -webkit-text-stroke: 3px var(--c); }
 
+/* ---------- Activity tab ---------- */
+.act .panel { gap: 10px; }
+.act-label { font-size: 24px; color: var(--theme); font-family: "Fredoka", system-ui, sans-serif; margin-top: 8px; }
+.act-text { font-size: 36px; line-height: 1.35; }
+.act-mats { font-size: 28px; background: var(--tint); border-radius: 18px; padding: 14px 20px; }
+.done-box { margin-top: auto; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-top: 16px; }
+.btn.big-done { font-size: 30px; padding: 22px 36px; background: #2FB45A; }
+.done.yes { font-size: 30px; background: #DDF6E4; color: #1d6b38; border-radius: 999px; padding: 16px 28px; }
+.small-btn { font-size: 18px !important; padding: 10px 18px !important; }
+.sound-tip { background: #fff; border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-size: 20px; }
+
 /* ---------- Narrow screens (portrait panels, phones) ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }

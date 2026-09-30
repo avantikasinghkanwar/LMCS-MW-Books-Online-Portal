@@ -1,11 +1,12 @@
 /* Keeps a copy of the portal on the panel so it opens without internet.
    Bump VERSION whenever files change, so panels pick up the new copy. */
-var VERSION = 'v1790767653';
+var VERSION = 'v1790776850';
 var FILES = [
   "./",
   "index.html",
   "style.css",
   "content.js",
+  "activities.js",
   "app.js",
   "config.js",
   "manifest.webmanifest",
