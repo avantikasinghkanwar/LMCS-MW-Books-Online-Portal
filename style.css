@@ -132,11 +132,11 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 /* ---------- A–Z chart ---------- */
 .chart { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; }
 .chart button {
-  aspect-ratio: 1 / 1; border-radius: 22px; background: #fff; box-shadow: var(--shadow);
+  min-height: 110px; border-radius: 22px; background: #fff; box-shadow: var(--shadow);
   font-family: "Fredoka", system-ui, sans-serif; font-size: 72px; color: #c9c9ce;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
-.chart button.on { color: var(--c); }
+.chart button.on, .chart button[data-letter] { color: var(--c); }
 .chart button small { font-family: "Nunito", system-ui, sans-serif; font-size: 34px; }
 .chart button.off { cursor: default; }
 
@@ -165,11 +165,56 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 .cheer[hidden] { display: none; }
 @keyframes pop { 0% { transform: translate(-50%,-50%) scale(.2); opacity: 0; } 30% { opacity: 1; transform: translate(-50%,-50%) scale(1.15); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(1); } }
 
+/* ---------- Setup ---------- */
+.setup { max-width: 640px; margin: 20px auto; background: #fff; border-radius: var(--radius); box-shadow: var(--shadow); padding: 34px; display: flex; flex-direction: column; gap: 18px; }
+.setup h1 { font-size: 44px; }
+.setup label { display: flex; flex-direction: column; gap: 8px; font-size: 24px; }
+.setup input, .setup select { font: inherit; font-size: 26px; padding: 14px 18px; border-radius: 16px; border: 2px solid #d8d8de; background: #fff; }
+.muted { color: var(--muted); }
+.small { font-size: 18px; }
+.error { color: #c4302b; margin: 0; }
+
+/* ---------- Home ---------- */
+.tiles.two { grid-template-columns: repeat(2, minmax(0, 440px)); justify-content: center; }
+.tiles.two .glyph { font-size: 120px; }
+.resume { display: block; margin: 0 auto 26px; }
+.panel-id { text-align: center; color: var(--muted); font-size: 20px; margin-top: 30px; }
+
+/* ---------- Book page list ---------- */
+.page-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; overflow: auto; padding-bottom: 10px; }
+.page-card { background: #fff; border-radius: 22px; box-shadow: var(--shadow); padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; min-height: 170px; justify-content: center; }
+.page-card:active { transform: scale(.96); }
+.page-card .glyph { font-family: "Fredoka", system-ui, sans-serif; font-size: 72px; line-height: 1; }
+.page-card .emoji { font-size: 60px; line-height: 1.1; }
+.page-card .emoji svg { width: 60px; height: 50px; }
+.pc-title { font-size: 19px; text-align: center; }
+.pc-pages { font-size: 16px; color: var(--muted); }
+
+/* ---------- Item screens ---------- */
+.page-tag { font-size: 20px; color: var(--muted); background: #fff; padding: 8px 16px; border-radius: 999px; }
+.panel.grow { flex: 1; }
+.panel.center { align-items: center; justify-content: center; text-align: center; }
+.emoji-big { font-size: 140px; }
+.navbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; }
+.navbar .btn { font-size: 20px; padding: 12px 22px; }
+.controls.top { margin: 0 0 16px; align-items: center; }
+.new-word { font-size: 22px; align-self: center; margin-left: auto; color: var(--muted); }
+.new-word b { color: var(--ink); font-size: 28px; }
+.word-card .pic svg, .choice svg { vertical-align: middle; }
+.line-scene.ruled { background: #fff; }
+
+/* ---------- Colour-the-letters revision ---------- */
+.chart.colour button { font-size: 96px; color: #fff; -webkit-text-stroke: 3px #3a3a3c; paint-order: stroke; }
+.chart.colour button.filled { color: var(--c); -webkit-text-stroke: 3px var(--c); }
+
 /* ---------- Narrow screens (portrait panels, phones) ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }
   .split { grid-template-columns: 1fr; }
   .chart { grid-template-columns: repeat(4, 1fr); }
+  .page-grid { grid-template-columns: repeat(3, 1fr); }
+  .tiles.two { grid-template-columns: 1fr 1fr; }
+  .navbar .btn { font-size: 16px; padding: 10px 14px; }
   .trace-wrap, .line-scene { min-height: 420px; }
   .choice { width: 140px; height: 140px; font-size: 80px; }
 }
