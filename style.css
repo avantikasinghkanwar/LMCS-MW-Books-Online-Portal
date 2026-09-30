@@ -218,6 +218,9 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 .small-btn { font-size: 18px !important; padding: 10px 18px !important; }
 .sound-tip { background: #fff; border-radius: 12px; padding: 10px 14px; margin: 8px 0; font-size: 20px; }
 
+/* ---------- Materials strip (under the page before a letter) ---------- */
+.mat-strip { margin-top: 14px; background: #FFF1C2; border-radius: 16px; padding: 14px 22px; font-size: 24px; line-height: 1.35; }
+
 /* ---------- Narrow screens (portrait panels, phones) ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }

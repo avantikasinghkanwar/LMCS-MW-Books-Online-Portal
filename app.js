@@ -628,6 +628,15 @@
     return { html: '<div class="panel grow center"><div class="emoji-big">🎨</div><h2>Free colouring</h2><p class="muted">The picture for this page is coming soon. Use the book for now.</p></div>' };
   }
 
+  // Shown under the page before a letter, so the teacher can collect tomorrow's materials today.
+  function materialsStrip(b, i) {
+    var next = C.BOOKS[b].items[i + 1];
+    if (!next || next.type !== 'letter') return '';
+    var A = ACTIVITIES[next.letter];
+    if (!A || !A.materials || /^none/i.test(A.materials)) return '';
+    return '<div class="mat-strip">🧰 <b>Materials required for next Activity (' + next.letter + '):</b> ' + esc(A.materials) + '</div>';
+  }
+
   function renderItem(b, i, tab) {
     var it = C.BOOKS[b].items[i];
     var body;
@@ -642,7 +651,7 @@
       setTheme('#2FB45A', '#E6F7EC');
       body = it.type === 'chart' ? renderChart() : it.type === 'colourletters' ? renderColourLetters() : renderBlank();
     }
-    app.innerHTML = '<div class="screen">' + head(it, b, i, tab) + body.html + navBar(b, i) + '</div>';
+    app.innerHTML = '<div class="screen">' + head(it, b, i, tab) + body.html + materialsStrip(b, i) + navBar(b, i) + '</div>';
     if (body.init) cleanup = body.init() || null;
 
     var t = tabsFor(it).filter(function (x) { return x[0] === tab; })[0] || tabsFor(it)[0];
