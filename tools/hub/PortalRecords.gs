@@ -24,7 +24,10 @@ function handlePortal(data) {
       return r[k] === undefined ? '' : r[k];
     }).concat([now, r[PORTAL_LAST_KEY] === undefined ? '' : r[PORTAL_LAST_KEY]]);
   });
-  visits.getRange(visits.getLastRow() + 1, 1, rows.length, PORTAL_HEADERS.length).setValues(rows);
+  var first = visits.getLastRow() + 1;
+  // Page is stored as text, because some pages are ranges like "46–47". Mixed numbers and text confuse the summaries.
+  visits.getRange(first, 10, rows.length, 1).setNumberFormat('@');
+  visits.getRange(first, 1, rows.length, PORTAL_HEADERS.length).setValues(rows);
   updateClasses(ss, data.rows);
   return 'ok ' + rows.length;
 }
@@ -58,6 +61,7 @@ function setupPortal() {
   var visitsTab = sheet(ss, 'Visits', PORTAL_HEADERS);
   // Make sure row 1 has every header, including the newest one (Activity done).
   visitsTab.getRange(1, 1, 1, PORTAL_HEADERS.length).setValues([PORTAL_HEADERS]).setFontWeight('bold').setBackground('#FFF1C2');
+  visitsTab.getRange('J2:J').setNumberFormat('@');   // Page column = text
   summary(ss, 'Activities done',
     "=QUERY(Visits!A:V, \"select E, F, G, K, count(A), max(B) where V = 1 group by E, F, G, K order by E, F, K " +
     "label count(A) 'Times marked done', max(B) 'Last done'\", 1)");
