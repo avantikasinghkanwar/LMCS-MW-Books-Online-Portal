@@ -2,19 +2,41 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>LMCS Books Portal</title>
-<style>
-  body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;
-       font-family:system-ui,sans-serif;background:#FFF8EC;color:#1d1d1f;text-align:center}
-  h1{font-size:3rem;margin:0 0 .5rem}
-  p{font-size:1.4rem;color:#555}
-</style>
+<meta name="theme-color" content="#1E7BE0">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Nunito:wght@600;800&display=swap">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main>
-    <h1>LMCS Books Portal</h1>
-    <p>Coming soon: the A and B pilot.</p>
-  </main>
+  <header class="topbar">
+    <button class="btn-home" id="btnHome" aria-label="Home">⌂ Home</button>
+    <div class="topbar-title" id="topTitle">LMCS M1 English</div>
+    <button class="btn-teacher" id="btnTeacher">📘 Teacher notes</button>
+  </header>
+
+  <main id="app"></main>
+
+  <aside class="drawer" id="drawer" aria-hidden="true">
+    <div class="drawer-head">
+      <strong>Teacher notes</strong>
+      <button class="btn-close" id="drawerClose" aria-label="Close">✕</button>
+    </div>
+    <div id="drawerBody"></div>
+  </aside>
+
+  <div class="overlay" id="videoOverlay" hidden>
+    <div class="video-box">
+      <button class="btn-close big" id="videoClose" aria-label="Close video">✕ Close</button>
+      <div class="video-frame" id="videoFrame"></div>
+    </div>
+  </div>
+
+  <div class="cheer" id="cheer" hidden>⭐</div>
+
+  <script src="app.js"></script>
 </body>
 </html>
