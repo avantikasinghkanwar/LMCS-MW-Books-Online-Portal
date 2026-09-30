@@ -4,7 +4,7 @@
  */
 var PORTAL_HEADERS = ['Start', 'End', 'Seconds', 'Active seconds', 'Campus', 'Class', 'Teacher', 'Panel',
   'Book', 'Page', 'Item', 'Part', 'Touches', 'Traces', 'Sound taps', 'Game right', 'Game wrong',
-  'Video plays', 'Colour taps', 'Version', 'Received', 'Activity done'];
+  'Video plays', 'Colour taps', 'Version', 'Received', 'Activity done', 'Teacher email'];
 var PORTAL_KEYS = ['start', 'end', 'seconds', 'active_seconds', 'campus', 'class_name', 'teacher', 'panel',
   'book', 'page', 'item', 'part', 'touches', 'traces', 'sound_taps', 'game_right', 'game_wrong',
   'video_plays', 'colour_taps', 'version'];
@@ -12,17 +12,20 @@ var PORTAL_LAST_KEY = 'activity_done';   // goes in column V, after "Received"
 var PORTAL_CLASS_HEADERS = ['Campus', 'Class', 'Teacher', 'Panel', 'Last seen', 'Book', 'Page', 'On screen',
   'Visits', 'Active minutes'];
 
-// Called by the sorting desk for every batch of records from a panel.
-function handlePortal(data) {
+// Called for every batch of records from a panel. "who" is the verified signed-in person (or null for the old shared-password way).
+function handlePortal(data, who) {
   if (!data.rows || !data.rows.length) return 'nothing to save';
   var ss = openSheetFor('portal');
   var visits = sheet(ss, 'Visits', PORTAL_HEADERS);
   var now = new Date();
+  if (who) {   // the identity comes from the sign-in, never from what the panel says
+    data.rows.forEach(function (r) { r.campus = who.campus; r.class_name = who.cls; r.teacher = who.name; });
+  }
   var rows = data.rows.map(function (r) {
     return PORTAL_KEYS.map(function (k) {
       if (k === 'start' || k === 'end') return toDate(r[k]);
       return r[k] === undefined ? '' : r[k];
-    }).concat([now, r[PORTAL_LAST_KEY] === undefined ? '' : r[PORTAL_LAST_KEY]]);
+    }).concat([now, r[PORTAL_LAST_KEY] === undefined ? '' : r[PORTAL_LAST_KEY], who ? who.email : '']);
   });
   var first = visits.getLastRow() + 1;
   // Page is stored as text, because some pages are ranges like "46–47". Mixed numbers and text confuse the summaries.

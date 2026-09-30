@@ -5,9 +5,11 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v3';
+  var APP_VERSION = 'm1-v4';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
+  // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
+  var LOGIN_ON = !!CONFIG.CLIENT_ID;
 
   // ---------- Small helpers ----------
   function $(id) { return document.getElementById(id); }
@@ -79,12 +81,72 @@
     return main;
   }
 
+  // ---------- Google sign-in (talks to the hub; the hub decides who is allowed) ----------
+  var Auth = (function () {
+    var KEY = 'lmcs.auth';
+    function get() { return store(KEY); }
+    function session() { var a = get(); return a && a.session; }
+    function profile() { var a = get(); return a && a.profile; }
+    function clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
+    // Sends a message to the hub and reads its JSON answer.
+    function call(payload) {
+      return fetch(CONFIG.SHEET_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(payload) })
+        .then(function (r) { return r.json(); });
+    }
+    function withSession(payload) { payload.session = session(); return call(payload); }
+    function login(idToken) {
+      return call({ action: 'login', idToken: idToken }).then(function (res) {
+        if (res && res.ok) store(KEY, { session: res.session, profile: res.profile });
+        return res;
+      });
+    }
+    // Asks the hub for the latest details (an admin may have changed them). Resolves { expired, changed }.
+    function refresh() {
+      if (!session() || !CONFIG.SHEET_URL || navigator.onLine === false) return Promise.resolve({});
+      return withSession({ action: 'me' }).then(function (res) {
+        if (res && res.error === 'session') { clear(); return { expired: true }; }
+        if (res && res.ok) {
+          var old = JSON.stringify(profile());
+          store(KEY, { session: session(), profile: res.profile });
+          return { changed: old !== JSON.stringify(res.profile) };
+        }
+        return {};
+      }, function () { return {}; });
+    }
+    function setProfile(campus, cls) {
+      return withSession({ action: 'setprofile', campus: campus, cls: cls }).then(function (res) {
+        if (res && res.ok) store(KEY, { session: session(), profile: res.profile });
+        return res;
+      });
+    }
+    return {
+      session: session, profile: profile, clear: clear, call: call, login: login, refresh: refresh, setProfile: setProfile,
+      isMaster: function () { var p = profile(); return !!(p && p.role === 'master'); },
+      adminList: function () { return withSession({ action: 'admin_list' }); },
+      adminSave: function (t) { t.action = 'admin_save'; return withSession(t); },
+      adminDelete: function (email) { return withSession({ action: 'admin_delete', email: email }); }
+    };
+  })();
+
+  function panelId() {
+    var id = store('lmcs.panel');
+    if (!id) { id = 'P' + Math.random().toString(36).slice(2, 8).toUpperCase(); store('lmcs.panel', id); }
+    return id;
+  }
+
   // ---------- Tracking: one record per page visit ----------
   var Tracker = (function () {
     var visit = null, lastInfo = null;
     var QUEUE = 'lmcs.queue';
 
-    function setup() { return store('lmcs.setup'); }
+    // Who is using this panel: from the Google sign-in when that is on, otherwise from the panel-setup screen.
+    function setup() {
+      if (LOGIN_ON) {
+        var p = Auth.profile();
+        return p ? { campus: p.campus, cls: p.cls, teacher: p.name, panel: panelId() } : null;
+      }
+      return store('lmcs.setup');
+    }
     function now() { return Date.now(); }
     function pad(n) { return (n < 10 ? '0' : '') + n; }
     function stamp(t) { var d = new Date(t); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
@@ -137,6 +199,17 @@
       if (!q.length || !CONFIG.SHEET_URL || !online || sending) return;
       if (navigator.onLine === false) return;
       var batch = q.slice(0, 200);
+      if (LOGIN_ON) {
+        // Signed-in mode: send with the session and only remove records once the hub confirms it saved them.
+        if (useBeacon || !Auth.session()) return;   // leaving the page: keep them queued, they go next time
+        sending = true;
+        Auth.call({ action: 'records', session: Auth.session(), rows: batch }).then(function (res) {
+          sending = false;
+          if (res && res.ok) store(QUEUE, (store(QUEUE) || []).slice(batch.length));
+          else if (res && res.error === 'session') { Auth.clear(); route(); }
+        }, function () { sending = false; });
+        return;
+      }
       var body = JSON.stringify({ token: CONFIG.TOKEN, app: 'portal', rows: batch });
       function done() {
         var rest = (store(QUEUE) || []).slice(batch.length);
@@ -347,6 +420,7 @@
       '<label>Class teacher<input id="sTeacher" placeholder="e.g. Ms Neha" value="' + esc(s.teacher || '') + '"></label>' +
       '<p class="error" id="sErr" hidden>Please fill in all three.</p>' +
       '<button class="btn" id="sSave">Save and start</button>' +
+      (Tracker.setup() ? ' <button class="btn soft" data-go="home">← Back to Home</button>' : '') +
       '</div>';
     $('sSave').onclick = function () {
       var campus = $('sCampus').value, cls = $('sClass').value.trim(), teacher = $('sTeacher').value.trim();
@@ -371,7 +445,142 @@
       '<button class="tile" style="--c:#1E7BE0" data-go="book/2"><div class="glyph">O–Z</div><div class="label">Book 2</div><div class="sub">Term 2 · 43 pages</div></button>' +
       '</div>' +
       '<p class="panel-id">' + esc([s.campus, s.cls, s.teacher].join(' · ')) + '</p>' +
+      '<div class="home-actions">' +
+      (LOGIN_ON
+        ? '<button class="btn soft" id="btnSwitch">Switch teacher</button>' + (Auth.isMaster() ? '<button class="btn soft" data-go="admin">🛠 Admin</button>' : '')
+        : '<button class="btn soft" data-go="setup">✏️ Change teacher / school / class</button>') +
+      '</div>' +
       '</div>';
+    if (LOGIN_ON) $('btnSwitch').onclick = switchTeacher;
+  }
+
+  function switchTeacher() {
+    Auth.clear();
+    try { if (window.google && google.accounts && google.accounts.id) google.accounts.id.disableAutoSelect(); } catch (e) {}
+    location.hash = 'home';
+    route();
+  }
+
+  // ---- Sign-in screens (only used when CLIENT_ID is set) ----
+  var gisLoading = false;
+  function loadGIS(ok, fail) {
+    if (window.google && google.accounts && google.accounts.id) { ok(); return; }
+    if (gisLoading) return;
+    gisLoading = true;
+    var sc = document.createElement('script');
+    sc.src = 'https://accounts.google.com/gsi/client';
+    sc.onload = function () { gisLoading = false; ok(); };
+    sc.onerror = function () { gisLoading = false; fail(); };
+    document.head.appendChild(sc);
+  }
+
+  function renderLogin(msg) {
+    setTheme();
+    app.innerHTML =
+      '<div class="setup login">' +
+      '<h1>Teacher sign-in</h1>' +
+      '<p class="muted">Sign in with your school Google account. You only need to do this once on this panel.</p>' +
+      '<div id="gBtn" class="gbtn"></div>' +
+      '<p class="error" id="lErr"' + (msg ? '' : ' hidden') + '>' + esc(msg || '') + '</p>' +
+      '</div>';
+    function err(t) { var e = $('lErr'); if (e) { e.textContent = t; e.hidden = false; } }
+    if (navigator.onLine === false) { err('Connect this panel to the internet to sign in.'); return; }
+    loadGIS(function () {
+      google.accounts.id.initialize({
+        client_id: CONFIG.CLIENT_ID,
+        callback: function (resp) {
+          err('Signing in…');
+          Auth.login(resp.credential).then(function (res) {
+            if (res && res.ok) { location.hash = 'home'; route(); }
+            else if (res && res.error === 'notallowed') err('This account is not allowed. Use your school account, or ask the admin to add you.');
+            else err('Google sign-in could not be checked. Please try again.');
+          }, function () { err('Could not reach the school server. Check the internet and try again.'); });
+        }
+      });
+      google.accounts.id.renderButton($('gBtn'), { theme: 'outline', size: 'large', text: 'signin_with', width: 320 });
+    }, function () { err('Could not load Google sign-in. Check the internet and try again.'); });
+  }
+
+  // First sign-in only: the teacher chooses campus and class. Afterwards only an admin can change them.
+  function renderProfile() {
+    setTheme();
+    var p = Auth.profile();
+    var opts = CONFIG.CAMPUSES.map(function (c) { return '<option>' + esc(c) + '</option>'; }).join('');
+    app.innerHTML =
+      '<div class="setup">' +
+      '<h1>Welcome, ' + esc(p.name) + '</h1>' +
+      '<p class="muted">Choose your campus and class. After you save, only an admin can change them.</p>' +
+      '<label>Campus<select id="pCampus"><option value="">Choose…</option>' + opts + '</select></label>' +
+      '<label>Class and section<input id="pClass" placeholder="e.g. M1-A"></label>' +
+      '<p class="error" id="pErr" hidden></p>' +
+      '<button class="btn" id="pSave">Save and start</button> <button class="btn soft" id="pOut">Sign out</button>' +
+      '</div>';
+    $('pOut').onclick = switchTeacher;
+    $('pSave').onclick = function () {
+      var campus = $('pCampus').value, cls = $('pClass').value.trim();
+      function err(t) { $('pErr').textContent = t; $('pErr').hidden = false; }
+      if (!campus || !cls) { err('Please choose a campus and enter your class.'); return; }
+      Auth.setProfile(campus, cls).then(function (res) {
+        if (res && res.ok) { location.hash = 'home'; route(); }
+        else if (res && res.error === 'session') route();
+        else err('Could not save. Please try again.');
+      }, function () { err('Could not reach the school server.'); });
+    };
+  }
+
+  // Masters only: see and change every teacher's name, campus, class and role.
+  function renderAdmin() {
+    setTheme('#5B4FE0', '#ECEAFC');
+    app.innerHTML =
+      '<div class="screen"><div class="screen-head"><h1>Admin</h1><span class="pill">Change any teacher\'s name, campus, class or role</span></div>' +
+      '<div class="panel grow admin" id="adminBody">Loading…</div></div>';
+    function fail(t) { $('adminBody').innerHTML = '<p class="error">' + esc(t) + '</p>'; }
+    function load() {
+      Auth.adminList().then(function (res) {
+        if (res && res.ok) paint(res);
+        else if (res && res.error === 'session') route();
+        else fail('You need to be a master to open this.');
+      }, function () { fail('Could not reach the school server.'); });
+    }
+    function rowHtml(t, isNew) {
+      var camp = ['<option value="">Campus…</option>'].concat((CONFIG.CAMPUSES).map(function (c) { return '<option' + (t.campus === c ? ' selected' : '') + '>' + esc(c) + '</option>'; })).join('');
+      return '<div class="arow' + (isNew ? ' new' : '') + '" data-email="' + esc(t.email) + '">' +
+        (isNew ? '<input class="a-email" placeholder="email@lms.org.in">' : '<div class="a-emailtxt">' + esc(t.email) + '</div>') +
+        '<input class="a-name" placeholder="Name" value="' + esc(t.name) + '">' +
+        '<select class="a-campus">' + camp + '</select>' +
+        '<input class="a-cls" placeholder="Class" value="' + esc(t.cls) + '">' +
+        '<select class="a-role"><option value="teacher"' + (t.role === 'teacher' ? ' selected' : '') + '>Teacher</option><option value="master"' + (t.role === 'master' ? ' selected' : '') + '>Master</option></select>' +
+        '<button class="btn small a-save">' + (isNew ? 'Add' : 'Save') + '</button>' +
+        (isNew ? '' : '<button class="btn soft small a-del">Remove</button>') +
+        '<span class="a-msg"></span></div>';
+    }
+    function paint(res) {
+      $('adminBody').innerHTML =
+        '<h2 class="admin-h">Add a teacher</h2>' + rowHtml({ email: '', name: '', campus: '', cls: '', role: 'teacher' }, true) +
+        '<h2 class="admin-h">All teachers (' + res.teachers.length + ')</h2>' + res.teachers.map(function (t) { return rowHtml(t, false); }).join('');
+    }
+    $('adminBody').onclick = function (e) {
+      var row = e.target.closest ? e.target.closest('.arow') : null;
+      if (!row) return;
+      var msg = row.querySelector('.a-msg');
+      function say(t) { msg.textContent = t; }
+      if (e.target.classList.contains('a-save')) {
+        var emailEl = row.querySelector('.a-email');
+        var t = { email: emailEl ? emailEl.value.trim() : row.getAttribute('data-email'), name: row.querySelector('.a-name').value.trim(),
+          campus: row.querySelector('.a-campus').value, cls: row.querySelector('.a-cls').value.trim(), role: row.querySelector('.a-role').value };
+        if (!t.email) { say('Enter an email.'); return; }
+        say('Saving…');
+        Auth.adminSave(t).then(function (res) {
+          if (res && res.ok) { if (emailEl) load(); else say('✔ Saved'); } else say('Could not save.');
+        }, function () { say('No connection.'); });
+      } else if (e.target.classList.contains('a-del')) {
+        if (!window.confirm('Remove ' + row.getAttribute('data-email') + ' from the list?')) return;
+        Auth.adminDelete(row.getAttribute('data-email')).then(function (res) {
+          if (res && res.ok) load(); else say(res && res.error === 'protected' ? 'Masters cannot be removed.' : 'Could not remove.');
+        }, function () { say('No connection.'); });
+      }
+    };
+    load();
   }
 
   function renderBook(b) {
@@ -689,7 +898,7 @@
       ? '<div class="sound-tip">🗣️ <b>How to say the sound:</b> ' + esc(ACTIVITIES[it.letter].sound) + '</div>' : '';
     $('drawerBody').innerHTML = ref + tip + '<ol>' + NOTES[type].map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol>' +
       '<hr><p class="muted small">Class records waiting to send: ' + waiting + (CONFIG.SHEET_URL ? '' : ' (sheet not connected yet)') + '</p>' +
-      '<button class="btn soft" data-go="setup">⚙ Panel setup</button>';
+      (LOGIN_ON ? (Auth.isMaster() ? '<button class="btn soft" data-go="admin">🛠 Admin</button>' : '') : '<button class="btn soft" data-go="setup">⚙ Panel setup</button>');
   }
 
   // ---------- Router ----------
@@ -704,7 +913,11 @@
     $('drawer').classList.remove('open');
     var h = location.hash.slice(1) || 'home';
     var m;
-    if (!Tracker.setup() || h === 'setup') { renderSetup(); fillNotes(null); }
+    var p = LOGIN_ON ? Auth.profile() : null;
+    if (LOGIN_ON && (!Auth.session() || !p)) { renderLogin(); fillNotes(null); }
+    else if (LOGIN_ON && p.needsProfile) { renderProfile(); fillNotes(null); }
+    else if (LOGIN_ON && h === 'admin' && Auth.isMaster()) { renderAdmin(); fillNotes(null); }
+    else if (!LOGIN_ON && (!Tracker.setup() || h === 'setup')) { renderSetup(); fillNotes(null); }
     else if ((m = h.match(/^book\/([12])$/))) { renderBook(m[1]); fillNotes(null); }
     else if ((m = h.match(/^b([12])\/(\d+)\/(\w+)$/)) && C.BOOKS[m[1]].items[+m[2]]) { renderItem(m[1], +m[2], m[3]); }
     else { renderHome(); fillNotes(null); }
@@ -724,6 +937,17 @@
   $('videoClose').onclick = closeVideo;
   window.addEventListener('hashchange', route);
   route();
+
+  // With sign-in on: pick up changes an admin made (name, campus, class), and notice an expired session.
+  function refreshAuth() {
+    if (!LOGIN_ON) return;
+    Auth.refresh().then(function (r) {
+      var h = location.hash.slice(1) || 'home';
+      if (r.expired || (r.changed && (h === 'home' || h === 'admin'))) route();
+    });
+  }
+  refreshAuth();
+  setInterval(refreshAuth, 10 * 60000);
 
   // Save everything on the panel after the first visit, so it works without internet.
   if (online && 'serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});

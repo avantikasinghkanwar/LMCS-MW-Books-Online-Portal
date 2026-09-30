@@ -221,6 +221,19 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 /* ---------- Materials strip (under the page before a letter) ---------- */
 .mat-strip { margin-top: 14px; background: #FFF1C2; border-radius: 16px; padding: 14px 22px; font-size: 24px; line-height: 1.35; }
 
+/* ---------- Sign-in, home actions, admin ---------- */
+.gbtn { min-height: 46px; display: flex; justify-content: center; }
+.home-actions { display: flex; gap: 14px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+.home-actions .btn { font-size: 20px; padding: 12px 22px; }
+.admin { overflow: auto; gap: 10px; display: block; }
+.admin-h { font-size: 26px; margin: 14px 0 8px; }
+.arow { display: grid; grid-template-columns: 1.6fr 1.2fr 1.3fr .7fr .8fr auto auto; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; }
+.arow.new { background: #FFF8E1; padding: 10px; border-radius: 14px; border: 0; }
+.arow input, .arow select { font: inherit; font-size: 18px; padding: 10px 12px; border-radius: 12px; border: 2px solid #d8d8de; background: #fff; min-width: 0; }
+.a-emailtxt { font-size: 18px; word-break: break-all; }
+.a-msg { grid-column: 1 / -1; font-size: 16px; color: var(--muted); min-height: 0; }
+.btn.small { font-size: 18px; padding: 10px 18px; }
+
 /* ---------- Narrow screens (portrait panels, phones) ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }
@@ -229,6 +242,7 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
   .page-grid { grid-template-columns: repeat(3, 1fr); }
   .tiles.two { grid-template-columns: 1fr 1fr; }
   .navbar .btn { font-size: 16px; padding: 10px 14px; }
+  .arow { grid-template-columns: 1fr 1fr; }
   .trace-wrap, .line-scene { min-height: 420px; }
   .choice { width: 140px; height: 140px; font-size: 80px; }
 }

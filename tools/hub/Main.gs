@@ -13,9 +13,12 @@ function doPost(e) {
   lock.waitLock(20000);
   try {
     var data = JSON.parse(e.postData.contents);
-    if (data.token !== TOKEN) return text('ignored');
+    // Signed-in portal: every message has an "action" and a session.
+    if (data.action) return jsonOut(handleAction(data));
+    // Old way (shared password), only while ALLOW_LEGACY is true in Settings.gs.
+    if (!ALLOW_LEGACY || data.token !== TOKEN) return text('ignored');
     switch (data.app || 'portal') {
-      case 'portal': return text(handlePortal(data));
+      case 'portal': return text(handlePortal(data, null));
       // case 'homework': return text(handleHomework(data));
       default: return text('unknown app');
     }
