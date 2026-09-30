@@ -134,7 +134,7 @@
       if (!q.length || !CONFIG.SHEET_URL || !online || sending) return;
       if (navigator.onLine === false) return;
       var batch = q.slice(0, 200);
-      var body = JSON.stringify({ token: CONFIG.TOKEN, rows: batch });
+      var body = JSON.stringify({ token: CONFIG.TOKEN, app: 'portal', rows: batch });
       function done() {
         var rest = (store(QUEUE) || []).slice(batch.length);
         store(QUEUE, rest);
