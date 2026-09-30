@@ -6,7 +6,7 @@
  *   https://docs.google.com/spreadsheets/d/THIS_LONG_CODE/edit
  */
 var SHEETS = {
-  portal: 'PASTE_THE_SHEET_ID_HERE'   // LMCS MW Books Online Portal- Class Records
+  portal: '1_qnMmeJWGa8-M6Tg0FAOHFe2Wq-mFWMhIPOWQfW4MWM'   // LMCS MW Portal Data
   // Later, one line per new app, e.g.:  homework: 'ANOTHER_SHEET_ID',
 };
 
