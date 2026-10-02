@@ -161,5 +161,19 @@ var CONTENT = (function () {
     L.words = L.words.map(function (w) { return { name: w[0], pic: w[1], alt: w[2] || '', audio: 'w_' + slug(w[0]) }; });
   });
 
-  return { LETTERS: LETTERS, SKILLS: SKILLS, BOOKS: BOOKS, COLOURS: COLOURS, slug: slug };
+  // The Home page: outer blocks are subjects, inside them are books. A book belongs to a class level (1 = M1, 2 = M2, 3 = M3).
+  // To add a book: add its pages to BOOKS above (keyed by its number), then add a line to CATALOGUE.
+  var SUBJECTS = [
+    { id: 'rhymes', name: 'LMS Rhymes', icon: '🎵', color: '#E8457A' },
+    { id: 'english', name: 'English', icon: '🔤', color: '#1E7BE0' },
+    { id: 'hindi', name: 'Hindi', icon: 'अ', color: '#F5883A' },
+    { id: 'maths', name: 'Maths', icon: '123', color: '#2FB45A' },
+    { id: 'ga', name: 'General Awareness', icon: '🌍', color: '#A445C9' }
+  ];
+  var CATALOGUE = [
+    { key: '1', subject: 'english', level: '1', title: 'Book 1', range: 'A–N', term: 'Term 1' },
+    { key: '2', subject: 'english', level: '1', title: 'Book 2', range: 'O–Z', term: 'Term 2' }
+  ];
+
+  return { LETTERS: LETTERS, SKILLS: SKILLS, BOOKS: BOOKS, COLOURS: COLOURS, SUBJECTS: SUBJECTS, CATALOGUE: CATALOGUE, slug: slug };
 })();

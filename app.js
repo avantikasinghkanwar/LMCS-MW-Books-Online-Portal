@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v5';
+  var APP_VERSION = 'm1-v6';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
@@ -439,18 +439,56 @@
     };
   }
 
+  // ---- Home: subject blocks, and inside each the books for this teacher's class ----
+  // "M1-A", "M-1", "M 2" -> "1", "2". Anything else (e.g. the master's "ADMIN") -> "".
+  function levelOf(cls) { var m = String(cls || '').match(/^\s*m\s*-?\s*([123])/i); return m ? m[1] : ''; }
+  // Masters, and panels whose class name isn't recognised, get a class switcher; everyone else is automatic.
+  function levelPickable() {
+    var s = Tracker.setup() || {};
+    return (LOGIN_ON && Auth.isMaster()) || !levelOf(s.cls);
+  }
+  function currentLevel() {
+    var s = Tracker.setup() || {};
+    return levelPickable() ? (store('lmcs.level') || '1') : levelOf(s.cls);
+  }
+  function booksFor(subjectId, level) {
+    return C.CATALOGUE.filter(function (b) { return b.subject === subjectId && b.level === level; });
+  }
+  function levelSwitcher(level) {
+    if (!levelPickable()) return '<span class="level-chip">M' + level + '</span>';
+    return '<span class="level-switch">' + ['1', '2', '3'].map(function (l) {
+      return '<button class="lvl' + (l === level ? ' on' : '') + '" data-level="' + l + '">M' + l + '</button>';
+    }).join('') + '</span>';
+  }
+  function bindLevelSwitcher() {
+    each(app.querySelectorAll('[data-level]'), function (b) {
+      b.onclick = function () { store('lmcs.level', b.getAttribute('data-level')); route(); };
+    });
+  }
+  function toast(msg) {
+    var t = $('toast');
+    if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
+    t.textContent = msg; t.classList.add('on');
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { t.classList.remove('on'); }, 2600);
+  }
+
   function renderHome() {
     setTheme();
     var s = Tracker.setup() || {};
+    var level = currentLevel();
     var last = store('lmcs.last');
     var resume = last && last.hash ? '<button class="btn resume" data-go="' + last.hash + '">↩ Continue where we stopped</button>' : '';
+    var tiles = C.SUBJECTS.map(function (sub) {
+      var n = booksFor(sub.id, level).length;
+      return '<button class="tile subject' + (n ? '' : ' soon') + '" style="--c:' + sub.color + '" ' + (n ? 'data-go="subject/' + sub.id + '"' : 'data-soon="' + esc(sub.name) + '"') + '>' +
+        '<div class="s-icon">' + esc(sub.icon) + '</div><div class="label">' + esc(sub.name) + '</div>' +
+        '<div class="sub">' + (n ? n + (n === 1 ? ' book' : ' books') : 'Coming soon') + '</div></button>';
+    }).join('');
     app.innerHTML =
       '<div class="home">' +
-      '<h1>M1 English</h1>' + resume +
-      '<div class="tiles two">' +
-      '<button class="tile" style="--c:#E5484D" data-go="book/1"><div class="glyph">A–N</div><div class="label">Book 1</div><div class="sub">Term 1 · 47 pages</div></button>' +
-      '<button class="tile" style="--c:#1E7BE0" data-go="book/2"><div class="glyph">O–Z</div><div class="label">Book 2</div><div class="sub">Term 2 · 43 pages</div></button>' +
-      '</div>' +
+      '<h1>Choose a subject ' + levelSwitcher(level) + '</h1>' + resume +
+      '<div class="tiles subjects">' + tiles + '</div>' +
       '<p class="panel-id">' + esc([s.campus, s.cls, s.teacher].join(' · ')) + '</p>' +
       '<div class="home-actions">' +
       (LOGIN_ON
@@ -459,6 +497,34 @@
       '</div>' +
       '</div>';
     if (LOGIN_ON) $('btnSwitch').onclick = switchTeacher;
+    bindLevelSwitcher();
+    each(app.querySelectorAll('[data-soon]'), function (b) {
+      b.onclick = function () { toast(b.getAttribute('data-soon') + ' books for M' + level + ' are not ready yet.'); };
+    });
+  }
+
+  function subjectOf(id) { return C.SUBJECTS.filter(function (x) { return x.id === id; })[0]; }
+
+  function renderSubject(id) {
+    var sub = subjectOf(id);
+    if (!sub) { location.hash = 'home'; return; }
+    setTheme(sub.color, '#F4F4F8');
+    var level = currentLevel();
+    var books = booksFor(id, level);
+    var cards = books.map(function (b) {
+      var pages = C.BOOKS[b.key] ? C.BOOKS[b.key].pages : '';
+      var lastp = store('lmcs.bk' + b.key);
+      return '<button class="tile book-card" style="--c:' + sub.color + '" data-go="book/' + b.key + '">' +
+        '<div class="glyph">' + esc(b.range) + '</div><div class="label">' + esc(b.title) + '</div>' +
+        '<div class="sub">' + esc(b.term) + (pages ? ' · ' + pages + ' pages' : '') + '</div>' +
+        (lastp ? '<div class="last">Last page: ' + esc(lastp) + '</div>' : '') + '</button>';
+    }).join('');
+    app.innerHTML =
+      '<div class="screen"><div class="screen-head"><button class="btn soft small" data-go="home">← All subjects</button>' +
+      '<h1 style="color:' + sub.color + '">' + esc(sub.icon) + ' ' + esc(sub.name) + '</h1>' + levelSwitcher(level) + '</div>' +
+      (cards ? '<div class="tiles books">' + cards + '</div>' : '<div class="panel grow center"><h2>No M' + level + ' ' + esc(sub.name) + ' books yet</h2><p class="muted">They will appear here when they are ready.</p></div>') +
+      '</div>';
+    bindLevelSwitcher();
   }
 
   function switchTeacher() {
@@ -592,6 +658,9 @@
 
   function renderBook(b) {
     var book = C.BOOKS[b];
+    var entry = C.CATALOGUE.filter(function (x) { return x.key === b; })[0];
+    var sub = entry ? subjectOf(entry.subject) : null;
+    var backTo = sub ? 'subject/' + sub.id : 'home', backName = sub ? sub.name : 'Home';
     setTheme(b === '1' ? '#E5484D' : '#1E7BE0', b === '1' ? '#FDECEC' : '#E8F1FC');
     var cards = book.items.map(function (it, i) {
       return '<button class="page-card" data-go="b' + b + '/' + i + '/' + tabsFor(it)[0][0] + '">' +
@@ -599,7 +668,7 @@
         '<span class="pc-pages">' + pageLabel(it.pages) + '</span></button>';
     }).join('');
     app.innerHTML =
-      '<div class="screen"><div class="screen-head"><h1>' + book.title + '</h1><span class="pill">Tap the page the class is on</span></div>' +
+      '<div class="screen"><div class="screen-head"><button class="btn soft small" data-go="' + backTo + '">← ' + esc(backName) + '</button><h1>' + book.title + '</h1><span class="pill">Tap the page the class is on</span></div>' +
       '<div class="page-grid">' + cards + '</div></div>';
   }
 
@@ -871,6 +940,7 @@
     if (body.init) cleanup = body.init() || null;
 
     var t = tabsFor(it).filter(function (x) { return x[0] === tab; })[0] || tabsFor(it)[0];
+    store('lmcs.bk' + b, String(t[2]));
     Tracker.start({ book: b, page: String(t[2]), item: itemTitle(it), part: t[1] || itemTitle(it), hash: location.hash.slice(1) });
     fillNotes(it, b, t[2]);
   }
@@ -895,7 +965,7 @@
     chart: ['Point to a letter; children say its name and sound.', 'Tap a letter to check the sound together.'],
     colourletters: ['Children read each letter aloud, then tap it to colour it.', 'Book: colour the letters with crayons.'],
     blank: ['Picture for this page still to be chosen. Use the book.'],
-    home: ['Choose the book, then the page the class is on.', '<b>Continue where we stopped</b> opens the last page used on this panel.']
+    home: ['Choose the subject, then the book, then the page the class is on.', '<b>Continue where we stopped</b> opens the last page used on this panel.', 'Greyed-out subjects have no books for this class yet.']
   };
   function fillNotes(it, b, page) {
     var type = it ? it.type : 'home';
@@ -925,6 +995,7 @@
     else if (LOGIN_ON && p.needsProfile) { renderProfile(); fillNotes(null); }
     else if (LOGIN_ON && h === 'admin' && Auth.isMaster()) { renderAdmin(); fillNotes(null); }
     else if (!LOGIN_ON && (!Tracker.setup() || h === 'setup')) { renderSetup(); fillNotes(null); }
+    else if ((m = h.match(/^subject\/(\w+)$/))) { renderSubject(m[1]); fillNotes(null); }
     else if ((m = h.match(/^book\/([12])$/))) { renderBook(m[1]); fillNotes(null); }
     else if ((m = h.match(/^b([12])\/(\d+)\/(\w+)$/)) && C.BOOKS[m[1]].items[+m[2]]) { renderItem(m[1], +m[2], m[3]); }
     else { renderHome(); fillNotes(null); }

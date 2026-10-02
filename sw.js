@@ -1,6 +1,6 @@
 /* Keeps a copy of the portal on the panel so it opens without internet.
    Bump VERSION whenever files change, so panels pick up the new copy. */
-var VERSION = 'v1790959187';
+var VERSION = 'v1790959813';
 var FILES = [
   "./",
   "index.html",
@@ -231,7 +231,7 @@ self.addEventListener('activate', function (e) {
 self.addEventListener('fetch', function (e) {
   if (e.request.method !== 'GET') return;
   e.respondWith(
-    fetch(e.request).then(function (res) {
+    fetch(e.request, { cache: 'no-cache' }).then(function (res) {
       if (res.ok && new URL(e.request.url).origin === location.origin) {
         var copy = res.clone();
         caches.open(VERSION).then(function (c) { c.put(e.request, copy); });
