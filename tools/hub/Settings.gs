@@ -16,7 +16,7 @@ var ALLOW_LEGACY = true;   // set to false when every panel uses Google sign-in
 
 // ---------- Google sign-in ----------
 // The sign-in ID from Google Cloud. Must be the same value as CLIENT_ID in the portal's config.js.
-var CLIENT_ID = '';
+var CLIENT_ID = '359213788301-6chrh8kkbr5733hf2oekolm7bdbggdv0.apps.googleusercontent.com';
 // Anyone with an email on this school domain may sign in.
 var DOMAIN = 'lms.org.in';
 // Masters can always sign in (even from a personal Gmail) and can change everyone's details.
