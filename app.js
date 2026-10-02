@@ -5,11 +5,18 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v4';
+  var APP_VERSION = 'm1-v5';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
-  var LOGIN_ON = !!CONFIG.CLIENT_ID;
+  var LOGIN_ON = (function () {
+    // Test switch: opening the portal with ?login=1 turns sign-in on for that browser only; ?login=0 turns it off again.
+    var q = location.search.match(/[?&]login=([01])/);
+    if (q) { try { if (q[1] === '1') localStorage.setItem('lmcs.loginTest', '1'); else localStorage.removeItem('lmcs.loginTest'); } catch (e) {} }
+    var test = false;
+    try { test = !!localStorage.getItem('lmcs.loginTest'); } catch (e) {}
+    return !!CONFIG.CLIENT_ID && (!!CONFIG.LOGIN_REQUIRED || test);
+  })();
 
   // ---------- Small helpers ----------
   function $(id) { return document.getElementById(id); }
