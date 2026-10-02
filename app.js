@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v6';
+  var APP_VERSION = 'm1-v7';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
@@ -445,11 +445,13 @@
   // Masters, and panels whose class name isn't recognised, get a class switcher; everyone else is automatic.
   function levelPickable() {
     var s = Tracker.setup() || {};
-    return (LOGIN_ON && Auth.isMaster()) || !levelOf(s.cls);
+    // Without sign-in there is no verified identity to protect, so anyone may switch. With sign-in only masters (or unrecognised class names) may.
+    return !LOGIN_ON || Auth.isMaster() || !levelOf(s.cls);
   }
   function currentLevel() {
     var s = Tracker.setup() || {};
-    return levelPickable() ? (store('lmcs.level') || '1') : levelOf(s.cls);
+    // Start on the teacher's own level; a switch (if allowed) is remembered on this panel.
+    return levelPickable() ? (store('lmcs.level') || levelOf(s.cls) || '1') : levelOf(s.cls);
   }
   function booksFor(subjectId, level) {
     return C.CATALOGUE.filter(function (b) { return b.subject === subjectId && b.level === level; });

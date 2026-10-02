@@ -237,8 +237,12 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 /* ---------- Home: subject blocks, book cards, class level ---------- */
 .tiles.subjects { grid-template-columns: repeat(3, 1fr); max-width: 1300px; margin: 0 auto; }
 .tiles.books { grid-template-columns: repeat(2, minmax(0, 460px)); justify-content: center; gap: 28px; }
-.tile.subject { min-height: 240px; }
-.tile .s-icon { font-family: "Fredoka", system-ui, sans-serif; font-size: 96px; line-height: 1.1; color: var(--c); }
+.tile.subject { min-height: 190px; padding: 18px 14px; gap: 6px; }
+.tiles.subjects { gap: 20px; }
+.home h1 { margin: 4px 0 14px; }
+.resume { margin-bottom: 16px; }
+.tile .s-icon { font-family: "Fredoka", system-ui, sans-serif; font-size: 72px; line-height: 1.1; color: var(--c); }
+.tile.subject .label { font-size: 28px; }
 .tile.soon { background: #EFEFF2; border-bottom-color: #C9C9CF; cursor: default; }
 .tile.soon .s-icon, .tile.soon .label { color: #9a9aa2; }
 .tile.soon .sub { background: #fff; border-radius: 999px; padding: 4px 16px; }
