@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v7';
+  var APP_VERSION = 'm2-v1';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
@@ -390,7 +390,11 @@
   function closeVideo() { $('videoFrame').innerHTML = ''; $('videoOverlay').hidden = true; }
 
   // ---------- Book structure ----------
+  // M2 books are shown page by page from the Canva page images (see renderM2Page).
+  function isM2(b) { return !!(C.BOOKS[b] && C.BOOKS[b].m2); }
+  function bookLabel(b) { var m = String(b).match(/^m2b(\d+)$/); return m ? 'M2-' + m[1] : b; }
   function itemTitle(it) {
+    if (it.type === 'm2page') return it.title;
     if (it.type === 'letter') return C.LETTERS[it.letter].title;
     if (it.type === 'prewriting') return C.SKILLS[it.skill].title;
     if (it.type === 'chart') return 'A–Z Chart';
@@ -399,6 +403,7 @@
     return '';
   }
   function itemIcon(it) {
+    if (it.type === 'm2page') return '<span class="glyph">' + esc(it.letter || '') + '</span>';
     if (it.type === 'letter') return '<span class="glyph" style="color:' + C.LETTERS[it.letter].color + '">' + it.letter + '</span>';
     if (it.type === 'prewriting') return '<span class="emoji">' + pic(it.scene, it.alt) + '</span>';
     if (it.type === 'chart') return '<span class="emoji">🔤</span>';
@@ -406,6 +411,7 @@
     return '<span class="emoji">🎨</span>';
   }
   function tabsFor(it) {
+    if (it.type === 'm2page') return [['page', '', it.pages[0]]];
     if (it.type === 'letter') return [['meet', '1 · Meet ' + it.letter, it.pages[0]], ['words', '2 · Words & game', it.pages[1]], ['activity', '3 · Activity', it.pages[0]]];
     if (it.type === 'prewriting') return [['trace', '1 · Trace the picture', it.pages[0]], ['practice', '2 · Practice', it.pages[1]]];
     return [['main', '', it.pages.join('–')]];
@@ -517,7 +523,7 @@
       var pages = C.BOOKS[b.key] ? C.BOOKS[b.key].pages : '';
       var lastp = store('lmcs.bk' + b.key);
       return '<button class="tile book-card" style="--c:' + sub.color + '" data-go="book/' + b.key + '">' +
-        '<div class="glyph">' + esc(b.range) + '</div><div class="label">' + esc(b.title) + '</div>' +
+        '<div class="glyph' + (b.range.length > 6 ? ' long' : '') + '">' + esc(b.range) + '</div><div class="label">' + esc(b.title) + '</div>' +
         '<div class="sub">' + esc(b.term) + (pages ? ' · ' + pages + ' pages' : '') + '</div>' +
         (lastp ? '<div class="last">Last page: ' + esc(lastp) + '</div>' : '') + '</button>';
     }).join('');
@@ -659,6 +665,7 @@
   }
 
   function renderBook(b) {
+    if (isM2(b)) { renderM2Book(b); return; }
     var book = C.BOOKS[b];
     var entry = C.CATALOGUE.filter(function (x) { return x.key === b; })[0];
     var sub = entry ? subjectOf(entry.subject) : null;
@@ -674,7 +681,133 @@
       '<div class="page-grid">' + cards + '</div></div>';
   }
 
+
+  // ---------- M2 books: the Canva page, page by page ----------
+  // Every page of the printed book is shown as its Canva image, in book order, with the Excel's
+  // teacher plan beside it (day, sound cue, activity, classwork and homework). Pages the panel
+  // can't load show a plain note instead, so the rest of the book still works.
+  var M2_RATIO = 794 / 1123;   // Canva page size
+
+  function renderM2Book(b) {
+    var book = C.BOOKS[b];
+    var entry = C.CATALOGUE.filter(function (x) { return x.key === b; })[0];
+    var sub = entry ? subjectOf(entry.subject) : null;
+    var backTo = sub ? 'subject/' + sub.id : 'home', backName = sub ? sub.name : 'Home';
+    setTheme('#5B4FE0', '#ECEAFC');
+    var html = '', block = null;
+    book.items.forEach(function (it, i) {
+      if (it.block !== block) {
+        if (block !== null) html += '</div>';
+        block = it.block;
+        html += '<h2 class="m2-block">' + esc(block) + '</h2><div class="m2-grid">';
+      }
+      html += '<button class="m2-card" data-go="b' + b + '/' + i + '/page">' +
+        '<span class="m2-thumb"><span class="m2-num">' + it.pages[0] + '</span>' +
+        '<img src="' + it.thumb + '" alt="" loading="lazy" onerror="this.style.display=\'none\'"></span>' +
+        '<span class="pc-title">' + esc(it.title) + '</span>' +
+        '<span class="pc-pages">' + (it.day ? 'Day ' + it.day : 'Front page') + '</span></button>';
+    });
+    html += '</div>';
+    app.innerHTML =
+      '<div class="screen"><div class="screen-head"><button class="btn soft small" data-go="' + backTo + '">← ' + esc(backName) + '</button><h1>' + esc(book.title) + '</h1><span class="pill">Tap the page the class is on</span></div>' +
+      '<div class="m2-book">' + html + '</div></div>';
+  }
+
+  function m2Card(label, text, cls) {
+    return '<div class="m2-card-info ' + (cls || '') + '"><div class="m2-label">' + label + '</div><div class="m2-text">' + esc(text) + '</div></div>';
+  }
+
+  function renderM2Page(b, i, it) {
+    var items = C.BOOKS[b].items;
+    var L = it.letter && C.LETTERS[it.letter];
+    var showStrokes = L && (it.kind === 'intro' || it.kind === 'practice');
+    var info = '';
+
+    info += '<div class="m2-chips">' + (it.day ? '<span class="m2-chip day">Day ' + it.day + '</span>' : '') +
+      '<span class="m2-chip">Page ' + it.pages[0] + ' of ' + C.BOOKS[b].pages + '</span><span class="m2-chip soft">' + esc(it.block) + '</span>' +
+      (it.check ? '<span class="m2-chip check">Assessment checkpoint</span>' : '') + '</div>';
+
+    // The day starts with the letter-building activity, off the page, so it comes first.
+    if (it.activity) {
+      info += '<div class="m2-card-info act"><div class="m2-label">🧺 Montessori activity</div><div class="m2-text">' + esc(it.activity) + '</div>' +
+        '<div class="m2-mats">🧰 ' + esc(/^none/i.test(it.materials || '') ? 'No materials needed' : (it.materials || '')) + '</div>' +
+        '<div class="done-box" id="doneBox"></div></div>';
+    }
+    if (it.kind === 'intro') {
+      info += '<div class="m2-cue"><span class="m2-cue-text">' + esc(it.cue || '') + '</span></div>';
+      if (it.cueTip) info += '<div class="sound-tip">🗣️ <b>How to say the sound:</b> ' + esc(it.cueTip) + '</div>';
+      if (it.vocab) info += '<div class="m2-words">' + it.vocab.map(function (w) { return '<span>' + esc(w) + '</span>'; }).join('') + '</div>';
+    }
+    if (showStrokes) {
+      info += '<div class="m2-stroke"><div class="trace-wrap" id="m2Strokes">' + letterSvg(L.strokes) + '</div>' +
+        '<div class="m2-stroke-side"><button class="btn" id="m2Show">▶ Show me</button>' +
+        (it.formation ? '<div class="m2-formation">' + esc(it.formation) + '</div>' : '') + '</div></div>';
+    } else if (it.formation) {
+      info += m2Card('✋ Teacher says', it.formation);
+    }
+    if (it.covers) info += '<div class="m2-covers"><span class="m2-label">Letters on this page</span>' +
+      it.covers.split(',').map(function (x) { return '<b>' + esc(x.trim()) + '</b>'; }).join('') + '</div>';
+    if (it.colouring) info += m2Card('🖍️ Colouring', it.colouring);
+    if (it.cw) info += m2Card('✏️ Classwork', it.cw, 'cw') + m2Card('🏠 Homework', it.hw || '', 'hw');
+    else if (it.task && it.kind !== 'intro') info += m2Card('📝 On this page', it.task);
+
+    var html =
+      '<div class="m2-split" id="m2Body">' +
+      '<div class="m2-pagecol"><div class="m2-pagebox" id="pageBox"><img id="pageImg" alt="Book page ' + it.pages[0] + '" src="' + it.img + '">' +
+      '<div class="m2-missing" id="pageMissing" hidden><b>Page ' + it.pages[0] + '</b><span>This page picture has not been added to the portal yet. Use the book.</span></div></div></div>' +
+      '<div class="panel m2-info"><div class="m2-tools"><span class="pill">👆 Trace on the page with a finger</span><button class="btn soft" id="m2Clear">🧽 Clear</button></div>' +
+      '<div class="m2-title">' + esc(it.title) + '</div>' + info + '</div></div>';
+
+    return {
+      html: html,
+      init: function () {
+        var body = $('m2Body'), box = $('pageBox'), img = $('pageImg');
+        var tracer = null;
+        // Fit the page to the height available, keeping the Canva page shape.
+        function fit() {
+          var h = body.clientHeight, w = Math.round(h * M2_RATIO);
+          var max = Math.round(body.clientWidth * 0.62);
+          if (w > max) { w = max; h = Math.round(w / M2_RATIO); }
+          box.style.width = w + 'px'; box.style.height = h + 'px';
+        }
+        fit();
+        window.addEventListener('resize', fit);
+        function ready() { if (!tracer) tracer = makeTracer(box, '#E5484D'); }
+        img.onload = ready;
+        img.onerror = function () { img.style.display = 'none'; $('pageMissing').hidden = false; ready(); };
+        if (img.complete && img.naturalWidth) ready();
+        $('m2Clear').onclick = function () { if (tracer) tracer.clear(); };
+        // Load the next page's picture now, so turning the page is instant.
+        var next = items[i + 1];
+        if (next && next.img) { var pre = new Image(); pre.src = next.img; }
+
+        var stroker = null;
+        if (showStrokes) {
+          var wrap = $('m2Strokes'), svg = wrap.querySelector('svg');
+          addStartDots(svg, 15);
+          hideStrokes(svg);
+          $('m2Show').onclick = function () { animateStrokes(svg); };
+          stroker = svg;
+        }
+        if (it.activity) {
+          var key = 'm2:' + b + ':' + it.letter;
+          var paint = function () {
+            var when = activityDone(key);
+            $('doneBox').innerHTML = when
+              ? '<div class="done yes">✔ Done on ' + esc(when) + '</div><button class="btn soft small-btn" id="undo">Undo</button>'
+              : '<button class="btn big-done" id="markDone">✓ We did this activity</button>';
+            if (when) $('undo').onclick = function () { setActivityDone(key, ''); paint(); };
+            else $('markDone').onclick = function () { setActivityDone(key, today()); Tracker.count('activity'); cheer(); paint(); };
+          };
+          paint();
+        }
+        return function () { window.removeEventListener('resize', fit); if (tracer) tracer.destroy(); };
+      }
+    };
+  }
+
   function head(it, b, i, tab) {
+    if (it.type === 'm2page') return '';   // the title sits in the plan beside the page, so the page gets the full height
     var tabs = tabsFor(it);
     var tabHtml = tabs.length > 1 ? '<div class="tabs">' + tabs.map(function (t) {
       return '<button class="tab' + (t[0] === tab ? ' on' : '') + '" data-go="b' + b + '/' + i + '/' + t[0] + '">' + esc(t[1]) + (t[0] === 'activity' && it.type === 'letter' && activityDone(it.letter) ? ' ✔' : '') + '</button>';
@@ -918,16 +1051,21 @@
   // Shown under the page before a letter, so the teacher can collect tomorrow's materials today.
   function materialsStrip(b, i) {
     var next = C.BOOKS[b].items[i + 1];
-    if (!next || next.type !== 'letter') return '';
-    var A = ACTIVITIES[next.letter];
-    if (!A || !A.materials || /^none/i.test(A.materials)) return '';
-    return '<div class="mat-strip">🧰 <b>Materials required for next Activity (' + next.letter + '):</b> ' + esc(A.materials) + '</div>';
+    var letter, mats;
+    if (next && next.type === 'letter' && ACTIVITIES[next.letter]) { letter = next.letter; mats = ACTIVITIES[letter].materials; }
+    else if (next && next.type === 'm2page' && next.kind === 'intro') { letter = next.letter; mats = next.materials; }
+    if (!mats || /^none/i.test(mats)) return '';
+    return '<div class="mat-strip">🧰 <b>Materials required for next Activity (' + letter + '):</b> ' + esc(mats) + '</div>';
   }
 
   function renderItem(b, i, tab) {
     var it = C.BOOKS[b].items[i];
     var body;
-    if (it.type === 'letter') {
+    if (it.type === 'm2page') {
+      var ml = it.letter && C.LETTERS[it.letter];
+      setTheme(ml ? ml.color : '#5B4FE0', ml ? ml.tint : '#ECEAFC');
+      body = renderM2Page(b, i, it);
+    } else if (it.type === 'letter') {
       var L = C.LETTERS[it.letter];
       setTheme(L.color, L.tint);
       body = tab === 'words' ? renderWords(L) : tab === 'activity' ? renderActivity(L) : renderMeet(L);
@@ -938,12 +1076,12 @@
       setTheme('#2FB45A', '#E6F7EC');
       body = it.type === 'chart' ? renderChart() : it.type === 'colourletters' ? renderColourLetters() : renderBlank();
     }
-    app.innerHTML = '<div class="screen">' + head(it, b, i, tab) + body.html + materialsStrip(b, i) + navBar(b, i) + '</div>';
+    app.innerHTML = '<div class="screen' + (it.type === 'm2page' ? ' wide' : '') + '">' + head(it, b, i, tab) + body.html + materialsStrip(b, i) + navBar(b, i) + '</div>';
     if (body.init) cleanup = body.init() || null;
 
     var t = tabsFor(it).filter(function (x) { return x[0] === tab; })[0] || tabsFor(it)[0];
     store('lmcs.bk' + b, String(t[2]));
-    Tracker.start({ book: b, page: String(t[2]), item: itemTitle(it), part: t[1] || itemTitle(it), hash: location.hash.slice(1) });
+    Tracker.start({ book: bookLabel(b), page: String(t[2]), item: itemTitle(it), part: t[1] || itemTitle(it), hash: location.hash.slice(1) });
     fillNotes(it, b, t[2]);
   }
 
@@ -964,6 +1102,13 @@
       '<b>Practice:</b> show the first shape in each row, children trace the dotted ones.',
       'Book: picture page = finger + colour; practice page = pencil.'
     ],
+    m2page: [
+      'The page on the left is the printed book page. Children and teacher can <b>trace on it with a finger</b>; <b>Clear</b> wipes it.',
+      'On a letter page, tap <b>▶ Show me</b> to watch the strokes in order, then children air-draw.',
+      '<b>Classwork</b> is done in class; <b>Homework</b> goes home. Both come from the course map for this day.',
+      'On an intro page, do the Montessori activity off the page, then tap <b>We did this activity</b>.',
+      'Use <b>☰ All pages</b> to jump to any page of the book.'
+    ],
     chart: ['Point to a letter; children say its name and sound.', 'Tap a letter to check the sound together.'],
     colourletters: ['Children read each letter aloud, then tap it to colour it.', 'Book: colour the letters with crayons.'],
     blank: ['Picture for this page still to be chosen. Use the book.'],
@@ -971,7 +1116,7 @@
   };
   function fillNotes(it, b, page) {
     var type = it ? it.type : 'home';
-    var ref = it ? '<div class="book-ref">📖 Book ' + b + ' · page ' + page + '</div>' : '';
+    var ref = it ? '<div class="book-ref">📖 Book ' + (bookLabel(b)) + ' · page ' + page + '</div>' : '';
     var waiting = Tracker.waiting();
     var tip = it && it.type === 'letter' && ACTIVITIES[it.letter] && ACTIVITIES[it.letter].sound
       ? '<div class="sound-tip">🗣️ <b>How to say the sound:</b> ' + esc(ACTIVITIES[it.letter].sound) + '</div>' : '';
@@ -998,8 +1143,8 @@
     else if (LOGIN_ON && h === 'admin' && Auth.isMaster()) { renderAdmin(); fillNotes(null); }
     else if (!LOGIN_ON && (!Tracker.setup() || h === 'setup')) { renderSetup(); fillNotes(null); }
     else if ((m = h.match(/^subject\/(\w+)$/))) { renderSubject(m[1]); fillNotes(null); }
-    else if ((m = h.match(/^book\/([12])$/))) { renderBook(m[1]); fillNotes(null); }
-    else if ((m = h.match(/^b([12])\/(\d+)\/(\w+)$/)) && C.BOOKS[m[1]].items[+m[2]]) { renderItem(m[1], +m[2], m[3]); }
+    else if ((m = h.match(/^book\/(\w+)$/)) && C.BOOKS[m[1]]) { renderBook(m[1]); fillNotes(null); }
+    else if ((m = h.match(/^b(\w+?)\/(\d+)\/(\w+)$/)) && C.BOOKS[m[1]] && C.BOOKS[m[1]].items[+m[2]]) { renderItem(m[1], +m[2], m[3]); }
     else { renderHome(); fillNotes(null); }
     app.scrollTop = 0;
   }

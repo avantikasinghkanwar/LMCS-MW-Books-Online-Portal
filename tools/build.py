@@ -63,21 +63,8 @@ def make(name, voice, text):
 
 
 def write_sw_list(names):
-    files = ['./', 'index.html', 'style.css', 'content.js', 'activities.js', 'app.js', 'config.js',
-             'manifest.webmanifest', 'icon-192.png', 'icon-512.png']
-    files += ['audio/%s.m4a' % n for n in sorted(names)]
-    sw_path = os.path.join(ROOT, 'sw.js')
-    stamp = int(time.time())
-    sw = open(sw_path, encoding='utf-8').read()
-    sw = re.sub(r"var VERSION = '[^']*';", "var VERSION = 'v%d';" % stamp, sw)
-    sw = re.sub(r'var FILES = \[.*?\];', 'var FILES = ' + json.dumps(files, indent=2, ensure_ascii=False) + ';',
-                sw, flags=re.S)
-    open(sw_path, 'w', encoding='utf-8').write(sw)
-    # Stamp every script/style link in index.html with the same version, so a panel never mixes an old file with a new one.
-    idx_path = os.path.join(ROOT, 'index.html')
-    idx = open(idx_path, encoding='utf-8').read()
-    idx = re.sub(r'((?:src|href)="(?:style|config|content|activities|app)\.(?:css|js))(?:\?v=\d+)?"', r'\1?v=%d"' % stamp, idx)
-    open(idx_path, 'w', encoding='utf-8').write(idx)
+    """Offline list and version stamps are handled by tools/refresh_offline.py (it also covers the M2 page pictures)."""
+    subprocess.run([sys.executable, os.path.join(ROOT, 'tools', 'refresh_offline.py')], check=True)
 
 
 def main():

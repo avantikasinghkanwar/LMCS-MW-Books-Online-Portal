@@ -1,11 +1,12 @@
 /* Keeps a copy of the portal on the panel so it opens without internet.
    Bump VERSION whenever files change, so panels pick up the new copy. */
-var VERSION = 'v1790960411';
+var VERSION = 'v1791307007';
 var FILES = [
   "./",
   "index.html",
   "style.css",
   "content.js",
+  "m2books.js",
   "activities.js",
   "app.js",
   "config.js",
@@ -214,9 +215,15 @@ var FILES = [
   "audio/w_zip.m4a",
   "audio/w_zoo.m4a"
 ];
+var PAGES = [];
 
 self.addEventListener('install', function (e) {
-  e.waitUntil(caches.open(VERSION).then(function (c) { return c.addAll(FILES); }));
+  e.waitUntil(caches.open(VERSION).then(function (c) {
+    // Core files must all arrive; page pictures are saved one by one, so one missing picture changes nothing else.
+    return c.addAll(FILES).then(function () {
+      return Promise.all(PAGES.map(function (u) { return c.add(u).catch(function () {}); }));
+    });
+  }));
   self.skipWaiting();
 });
 

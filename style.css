@@ -268,3 +268,75 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
   .trace-wrap, .line-scene { min-height: 420px; }
   .choice { width: 140px; height: 140px; font-size: 80px; }
 }
+
+/* ---------- M2 books: the Canva page beside the teacher plan ---------- */
+.tile .glyph.long { font-size: 52px; line-height: 1.15; padding: 18px 0; }
+.m2-head { margin-bottom: 12px; }
+.m2-head h1 { font-size: 36px; }
+.m2-split { flex: 1; min-height: 0; display: flex; gap: 24px; }
+.m2-pagecol { display: flex; align-items: center; justify-content: center; min-height: 0; }
+.m2-pagebox { position: relative; background: #fff; border-radius: 14px; box-shadow: var(--shadow); overflow: hidden; flex: none; }
+.m2-pagebox img { display: block; width: 100%; height: 100%; }
+.m2-pagebox canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.m2-missing { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; text-align: center; padding: 30px; color: var(--muted); font-size: 24px; background: var(--tint); }
+.m2-missing[hidden] { display: none; }
+.m2-missing b { font-family: "Fredoka", system-ui, sans-serif; font-size: 56px; color: var(--theme); }
+.m2-info { flex: 1; overflow: auto; gap: 14px; display: block; }
+.m2-info > * { margin-bottom: 14px; }
+.m2-tools { display: flex; align-items: center; gap: 14px; justify-content: space-between; flex-wrap: wrap; }
+.m2-tools .btn { font-size: 20px; padding: 12px 22px; }
+.m2-title { font-family: "Fredoka", system-ui, sans-serif; font-size: 44px; color: var(--theme); line-height: 1.1; }
+.m2-chips { display: flex; gap: 10px; flex-wrap: wrap; }
+.m2-chip { font-size: 18px; padding: 6px 14px; border-radius: 999px; background: var(--theme); color: #fff; }
+.m2-chip.soft { background: var(--tint); color: var(--ink); }
+.m2-chip.check { background: #F5883A; }
+.m2-cue { background: var(--tint); border-radius: 18px; padding: 14px 20px; }
+.m2-cue-text { font-size: 38px; font-family: "Fredoka", system-ui, sans-serif; color: var(--theme); }
+.m2-words { display: flex; gap: 10px; flex-wrap: wrap; }
+.m2-words span { font-size: 28px; background: #fff; border: 3px solid var(--tint); border-radius: 14px; padding: 6px 16px; }
+.m2-stroke { display: flex; gap: 16px; align-items: stretch; }
+.m2-stroke .trace-wrap { flex: none; width: 200px; height: 200px; }
+.m2-stroke-side { display: flex; flex-direction: column; gap: 12px; justify-content: center; }
+.m2-stroke-side .btn { font-size: 20px; padding: 12px 22px; align-self: flex-start; }
+.m2-formation { font-size: 22px; line-height: 1.35; }
+.m2-card-info { border-radius: 18px; padding: 14px 20px; background: var(--tint); }
+.m2-card-info.cw { background: #E8F1FC; }
+.m2-card-info.hw { background: #FEF0E6; }
+.m2-card-info.act { background: #FFF1C2; }
+.m2-label { font-size: 20px; color: var(--theme); font-family: "Fredoka", system-ui, sans-serif; margin-bottom: 4px; }
+.m2-card-info.cw .m2-label { color: #1E7BE0; }
+.m2-card-info.hw .m2-label { color: #E07A25; }
+.m2-text { font-size: 26px; line-height: 1.35; }
+.m2-mats { font-size: 22px; margin-top: 10px; }
+.m2-covers { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.m2-covers b { font-family: "Fredoka", system-ui, sans-serif; font-size: 36px; color: var(--theme); background: var(--tint); border-radius: 12px; padding: 2px 14px; }
+
+/* ---------- M2 page list: thumbnails grouped by block ---------- */
+.m2-book { overflow: auto; padding-bottom: 20px; }
+.m2-block { font-size: 28px; color: var(--theme); margin: 18px 0 10px; }
+.m2-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 16px; }
+.m2-card { background: #fff; border-radius: 18px; box-shadow: var(--shadow); padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.m2-card:active { transform: scale(.96); }
+.m2-thumb { position: relative; display: block; width: 100%; padding-top: 141.4%; background: var(--tint); border-radius: 10px; overflow: hidden; }
+.m2-thumb img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.m2-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: "Fredoka", system-ui, sans-serif; font-size: 56px; color: var(--theme); opacity: .5; }
+
+.screen.wide { max-width: none; }
+.m2-stroke svg { overflow: visible; }
+/* Titles and labels stay dark so pale letter colours (yellow, orange) remain readable. */
+.m2-title { color: var(--ink); }
+.m2-chip { background: var(--tint); color: var(--ink); }
+.m2-chip.day { background: #fff; border: 3px solid var(--theme); font-weight: 800; }
+.m2-chip.check { background: #F5883A; color: #fff; }
+.m2-label { color: #55555c; }
+.m2-card-info.cw .m2-label { color: #1b5fb0; }
+.m2-card-info.hw .m2-label { color: #b8570f; }
+.m2-cue { border-left: 10px solid var(--theme); }
+.m2-cue-text { color: var(--ink); }
+.m2-covers b { color: var(--ink); }
+.m2-block { color: var(--ink); }
+
+.m2-stroke .trace-wrap { width: 170px; height: 170px; }
+.m2-card-info.act .done-box { margin-top: 10px; padding-top: 0; }
+.m2-card-info.act .btn.big-done { font-size: 24px; padding: 14px 26px; }
+.m2-card-info.act .done.yes { font-size: 24px; padding: 10px 20px; }
