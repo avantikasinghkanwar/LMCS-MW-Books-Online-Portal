@@ -42,6 +42,15 @@ export const DEFAULT_BRAND = {
     'Red, Blue and Gold are the brand trio; at most one of them dominates a design.',
     'Contact line (phone) on every print and flex.',
   ].join(' '),
+  // Canva connection: designs are rebuilt in this Canva account by the lmcs-canva-bridge skill.
+  canva: {
+    brandKitId: 'kAE5W0ti9eo',      // "La Montessori School" brand kit
+    logoAssetId: 'MAE5ocTpgXg',     // "LMS - Logo.png" in the Canva library (square)
+    logoWhiteAssetId: '',
+    logoAspect: 1,                  // logo width / height
+    baseDesignId: 'DAHX38oL9xE',    // any LMS design; resized to each new page size, then cleared
+    folderName: 'LMCS Design',
+  },
 };
 
 export function resolveColor(token, brand) {

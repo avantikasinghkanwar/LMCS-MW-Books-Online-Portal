@@ -4,7 +4,8 @@ import * as db from './db.js';
 import { renderSpec, ensureFonts } from './renderer.js';
 import { quickLayouts } from './templates.js';
 import { generateDesigns, refineDesign, adaptDesign } from './ai.js';
-import { exportImage, exportPDF, renderFull, thumbnail, download } from './export.js';
+import { exportImage, exportPDF, renderFull, thumbnail, download, fileBase } from './export.js';
+import { buildCanvaPackage } from './canva.js';
 
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
@@ -586,6 +587,22 @@ $('#btn-png').addEventListener('click', () => runExport('png'));
 $('#btn-jpg').addEventListener('click', () => runExport('jpg'));
 $('#btn-pdf').addEventListener('click', () => runExport('pdf'));
 
+$('#btn-canva').addEventListener('click', async () => {
+  if (!spec()) return toast('Create a design first.');
+  const info = $('#export-info');
+  info.textContent = 'Preparing Canva package...';
+  try {
+    const title = $('#d-title').value.trim() || `${readBrief().purpose} - ${fmt().name}`;
+    const pkg = await buildCanvaPackage(spec(), S.brand, fmt(), await renderAssets(), title);
+    download(new Blob([JSON.stringify(pkg)], { type: 'application/json' }), `${fileBase(title, fmt())}.canva.json`);
+    const native = pkg.layers.filter(l => l.kind !== 'image' || l.canvaAssetId).length;
+    info.textContent = `Canva package ready: ${native} editable layers, ${Object.keys(pkg.images).length} image layers. ` +
+      'Attach it in Claude and say "send this to Canva".';
+  } catch (e) {
+    info.textContent = e.message;
+  }
+});
+
 // ---------------------------------------------------------------- library
 
 async function renderLibrary() {
@@ -717,6 +734,10 @@ function fillBrandForm() {
   $('#b-web').value = b.website || ''; $('#b-insta').value = b.instagram || '';
   $('#b-branches').value = b.branches.join(', ');
   $('#b-voice').value = b.voice; $('#b-motifs').value = b.motifs; $('#b-rules').value = b.rules;
+  const cv = b.canva || {};
+  $('#b-cv-kit').value = cv.brandKitId || ''; $('#b-cv-folder').value = cv.folderName || '';
+  $('#b-cv-logo').value = cv.logoAssetId || ''; $('#b-cv-logo-w').value = cv.logoWhiteAssetId || '';
+  $('#b-cv-aspect').value = cv.logoAspect || 1; $('#b-cv-base').value = cv.baseDesignId || '';
   const wrap = $('#b-colors');
   wrap.innerHTML = '';
   for (const [k, v] of Object.entries(b.colors)) {
@@ -754,6 +775,11 @@ $('#b-save').addEventListener('click', async () => {
   $$('#b-colors [data-color]').forEach(i => { b.colors[i.dataset.color] = i.value; });
   $$('#b-colors [data-name]').forEach(i => { b.colorNames[i.dataset.name] = i.value.trim(); });
   for (const role of ['heading', 'body', 'accent']) b.fonts[role] = $(`#b-font-${role}`).value;
+  b.canva = {
+    brandKitId: $('#b-cv-kit').value.trim(), folderName: $('#b-cv-folder').value.trim() || 'LMCS Design',
+    logoAssetId: $('#b-cv-logo').value.trim(), logoWhiteAssetId: $('#b-cv-logo-w').value.trim(),
+    logoAspect: +$('#b-cv-aspect').value || 1, baseDesignId: $('#b-cv-base').value.trim(),
+  };
   await db.setKV('brand', b);
   refreshBranchSelects();
   toast('Brand saved. New and existing designs now use it.');
@@ -806,7 +832,7 @@ $('#s-restore-input').addEventListener('change', async (e) => {
 async function init() {
   $('#gfonts').href = googleFontsHref();
   const saved = await db.getKV('brand');
-  if (saved) S.brand = { ...clone(DEFAULT_BRAND), ...saved, colors: { ...DEFAULT_BRAND.colors, ...saved.colors }, fonts: { ...DEFAULT_BRAND.fonts, ...saved.fonts } };
+  if (saved) S.brand = { ...clone(DEFAULT_BRAND), ...saved, colors: { ...DEFAULT_BRAND.colors, ...saved.colors }, fonts: { ...DEFAULT_BRAND.fonts, ...saved.fonts }, canva: { ...DEFAULT_BRAND.canva, ...saved.canva } };
   S.apiKey = await db.getKV('apiKey', '');
   $('#s-key').value = S.apiKey;
   formatOptions($('#f-format'), S.formatId);

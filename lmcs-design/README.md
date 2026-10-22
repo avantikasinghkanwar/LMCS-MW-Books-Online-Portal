@@ -19,6 +19,9 @@ this folder only until it has its own repository (`LMCS-Design`); copy the folde
 - **Campaign adapt.** Rebuilds an approved post as a flex, A3 poster or story so the whole campaign matches.
 - **Print-ready export.** PNG/JPG at exact social sizes. Print PDF with bleed and crop marks at 300 dpi for paper
   and 50-150 dpi for flex, with automatic scaling for backdrops larger than a PDF page allows.
+- **Send to Canva.** Rebuilds a design in the LMS Canva account as editable shapes and text, with the LMS logo from
+  the Canva library. Press **Send to Canva**, attach the downloaded `.canva.json` in Claude (Cowork or Claude Code,
+  with the Canva connector), and say "send this to Canva". See `skills/lmcs-canva-bridge/`.
 - **Library.** Saved designs with branch and approval status. Assets: logos, school photos, a reference board.
 - **Brand tab.** Colours, fonts, voice, motifs, rules and branches. Every design follows these settings.
 
@@ -53,8 +56,10 @@ The API key is never included in backups.
 | `js/ai.js` | Claude API calls (generate, refine, adapt) |
 | `js/templates.js` | Built-in layouts |
 | `js/export.js` | PNG/JPG/PDF export |
+| `js/canva.js` | Builds the Canva package: native shapes and text, flattened images |
 | `js/db.js` | IndexedDB database and backup |
 | `skills/lmcs-designer/` | The same design knowledge as a Claude skill, for Claude Code / Cowork / claude.ai |
+| `skills/lmcs-canva-bridge/` | Claude skill + script that builds a `.canva.json` package into Canva |
 | `vendor/` | Bundled libraries: Anthropic SDK 0.132.1, jsPDF 2.5.1, qrcode-generator 1.4.4 |
 
 ## Notes

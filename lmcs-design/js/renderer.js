@@ -30,13 +30,14 @@ export function renderSpec(ctx, spec, brand, geo, assets, opts = {}) {
 
   ctx.save();
   ctx.clearRect(0, 0, W, H);
-  drawBackground(ctx, spec.background || {}, brand, geo, assets, C);
+  if (!opts.transparent) drawBackground(ctx, spec.background || {}, brand, geo, assets, C);
 
   (spec.elements || []).forEach((el, i) => {
     if (!el || el.hidden) return;
     ctx.save();
     ctx.globalAlpha = el.opacity ?? 1;
     let box = elementBox(el, geo, X, Y, S);
+    let fit = null;
     if (el.rotation) {
       const cx = box.x + box.w / 2, cy = box.y + box.h / 2;
       ctx.translate(cx, cy);
@@ -54,7 +55,7 @@ export function renderSpec(ctx, spec, brand, geo, assets, opts = {}) {
         drawLogo(ctx, el, box, brand, assets.logo, C);
         break;
       case 'text':
-        box = drawText(ctx, el, box, S, C, brand) || box;
+        fit = drawText(ctx, el, box, S, C, brand);
         break;
       case 'line':
         drawLine(ctx, el, X, Y, S, C);
@@ -64,7 +65,7 @@ export function renderSpec(ctx, spec, brand, geo, assets, opts = {}) {
         break;
     }
     ctx.restore();
-    hits.push({ index: i, ...box });
+    hits.push({ index: i, ...box, fit });
   });
 
   if (opts.selected != null && hits.find(h => h.index === opts.selected)) {
@@ -392,7 +393,11 @@ function drawText(ctx, el, box, S, C, brand) {
     y += fs * lh;
   }
   if ('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-  return box;
+  // Fit result, used by the Canva bridge to place native text at the same size.
+  const textTop = valign === 'middle' ? box.y + (box.h - blockH) / 2 : valign === 'bottom' ? box.y + box.h - blockH - pad : box.y + pad;
+  const pillW = maxLine + pad * 2;
+  const pillX = align === 'center' ? box.x + (box.w - pillW) / 2 : align === 'right' ? box.x + box.w - pillW : box.x;
+  return { fs, pad, lineHeight: lh, lines: lines.length, textTop, blockH, maxLine, pill: hasBg ? { x: pillX, y: textTop - pad, w: pillW, h: blockH + pad * 2 } : null };
 }
 
 // ---- Guides (preview only) ----
