@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LMCS Design Studio</title>
+  <meta name="description" content="Brand-locked design studio for La Montessori Chain of Schools: social media, posters and flexes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link id="gfonts" rel="stylesheet" href="">
+  <link rel="stylesheet" href="css/studio.css">
+  <script src="vendor/jspdf-2.5.1.umd.min.js"></script>
+  <script src="vendor/qrcode-generator-1.4.4.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brandmark"><span class="dot"></span><strong>LMCS Design</strong><span class="muted">Studio</span></div>
+    <nav class="tabs" role="tablist">
+      <button data-tab="studio" class="active">Studio</button>
+      <button data-tab="library">Library</button>
+      <button data-tab="assets">Assets</button>
+      <button data-tab="brand">Brand</button>
+      <button data-tab="settings">Settings</button>
+    </nav>
+  </header>
+
+  <!-- STUDIO -->
+  <main id="tab-studio" class="tab active studio">
+    <aside class="panel brief">
+      <h2>Brief</h2>
+      <label>Format
+        <select id="f-format"></select>
+      </label>
+      <div id="custom-size" class="row hidden">
+        <input id="f-cw" type="number" min="1" step="any" placeholder="W">
+        <input id="f-ch" type="number" min="1" step="any" placeholder="H">
+        <select id="f-cu"><option>px</option><option>mm</option><option>cm</option><option>in</option><option selected>ft</option></select>
+      </div>
+      <p id="format-note" class="hint"></p>
+      <div class="row">
+        <label>Branch <select id="f-branch"></select></label>
+        <label>Purpose
+          <select id="f-purpose">
+            <option>Admissions</option><option>Event</option><option>Celebration</option><option>Hiring</option>
+            <option>Announcement</option><option>Festival</option><option>Workshop</option><option>Other</option>
+          </select>
+        </label>
+      </div>
+      <label>Headline <input id="f-headline" placeholder="e.g. Admissions *open* 2027-28"></label>
+      <label>Supporting line <input id="f-subline" placeholder="One calm line"></label>
+      <label>Key details <textarea id="f-details" rows="2" placeholder="Classes, eligibility, programme..."></textarea></label>
+      <div class="row3">
+        <label>Date <input id="f-date"></label>
+        <label>Time <input id="f-time"></label>
+        <label>Venue <input id="f-venue"></label>
+      </div>
+      <div class="row">
+        <label>Call to action <input id="f-cta" placeholder="Visit us / Register now"></label>
+        <label>Contact <input id="f-contact"></label>
+      </div>
+      <label>Link for QR (optional) <input id="f-link" placeholder="https://forms.gle/..."></label>
+
+      <h3>Reference pictures</h3>
+      <div class="drop" id="drop-refs" tabindex="0">Drop or click to add designs you like<input type="file" accept="image/*" multiple hidden></div>
+      <div class="chips" id="refs"></div>
+      <label>Follow references
+        <select id="f-follow">
+          <option value="close">Closely - same layout</option>
+          <option value="loose" selected>Loosely - same mood</option>
+          <option value="inspire">Just inspiration</option>
+        </select>
+      </label>
+
+      <h3>School photos to use</h3>
+      <div class="drop" id="drop-photos" tabindex="0">Drop or click to add photos<input type="file" accept="image/*" multiple hidden></div>
+      <div class="chips" id="photos"></div>
+      <button class="ghost small" id="pick-photos">Pick from library</button>
+
+      <label>Notes to the designer <textarea id="f-notes" rows="2" placeholder="Anything to keep in mind"></textarea></label>
+
+      <div class="actions">
+        <button class="primary" id="btn-ai">Design with AI</button>
+        <button class="ghost" id="btn-quick">Quick layouts</button>
+      </div>
+      <p id="ai-status" class="status" role="status"></p>
+    </aside>
+
+    <section class="stage">
+      <div class="stage-bar">
+        <span id="stage-label" class="muted">Choose a format and press Design with AI or Quick layouts</span>
+        <label class="toggle"><input type="checkbox" id="t-guides" checked> Guides</label>
+      </div>
+      <div class="canvas-wrap" id="canvas-wrap">
+        <canvas id="preview"></canvas>
+      </div>
+      <div class="variants" id="variants"></div>
+      <p class="legend"><span class="sw red"></span>Trim (cut line) <span class="sw blue"></span>Safe area - keep text inside</p>
+    </section>
+
+    <aside class="panel side">
+      <section id="el-panel" class="hidden">
+        <h2>Selected element</h2>
+        <div id="el-fields"></div>
+        <div class="row">
+          <button class="ghost small" id="el-front">Bring forward</button>
+          <button class="ghost small" id="el-back">Send back</button>
+          <button class="ghost small danger" id="el-del">Delete</button>
+        </div>
+      </section>
+      <section>
+        <h2>Text</h2>
+        <div id="text-fields" class="muted small">Generate a design to edit its words here.</div>
+      </section>
+      <section>
+        <h2>Refine with AI</h2>
+        <textarea id="refine-text" rows="2" placeholder="e.g. make the headline bigger, use the blue as background, add the date in a gold pill"></textarea>
+        <button class="ghost" id="btn-refine">Apply change</button>
+      </section>
+      <section>
+        <h2>Campaign: adapt to</h2>
+        <div class="row"><select id="adapt-format"></select><button class="ghost" id="btn-adapt">Adapt</button></div>
+        <p class="hint">Rebuilds this design for another size so post, poster and flex match.</p>
+      </section>
+      <section>
+        <h2>Save &amp; export</h2>
+        <label>Title <input id="d-title" placeholder="e.g. Admissions 2027 - Kullu"></label>
+        <div class="row">
+          <button class="ghost" id="btn-save">Save to library</button>
+          <button class="ghost" id="btn-approve">Mark approved</button>
+        </div>
+        <div class="row">
+          <button class="primary" id="btn-png">PNG</button>
+          <button class="ghost" id="btn-jpg">JPG</button>
+          <button class="ghost" id="btn-pdf">Print PDF</button>
+        </div>
+        <label class="toggle"><input type="checkbox" id="t-crop" checked> Crop marks on PDF</label>
+        <p id="export-info" class="hint"></p>
+      </section>
+    </aside>
+  </main>
+
+  <!-- LIBRARY -->
+  <main id="tab-library" class="tab">
+    <div class="page">
+      <div class="page-head"><h1>Library</h1>
+        <div class="row">
+          <select id="lib-branch"><option value="">All branches</option></select>
+          <select id="lib-status"><option value="">Any status</option><option value="draft">Drafts</option><option value="approved">Approved</option></select>
+        </div>
+      </div>
+      <div class="grid" id="lib-grid"></div>
+    </div>
+  </main>
+
+  <!-- ASSETS -->
+  <main id="tab-assets" class="tab">
+    <div class="page">
+      <h1>Assets</h1>
+      <section class="card">
+        <h2>Logo</h2>
+        <p class="hint">Upload transparent PNGs. The white version is used on coloured or photo backgrounds.</p>
+        <div class="logo-slots">
+          <div class="logo-slot"><div class="logo-prev" id="logo-color-prev">No logo</div>
+            <button class="ghost small" data-logo="color">Upload colour logo</button></div>
+          <div class="logo-slot dark"><div class="logo-prev" id="logo-white-prev">No logo</div>
+            <button class="ghost small" data-logo="white">Upload white logo</button></div>
+        </div>
+        <input type="file" id="logo-input" accept="image/png,image/svg+xml,image/webp" hidden>
+      </section>
+      <section class="card">
+        <div class="page-head"><h2>School photos</h2>
+          <div class="row"><select id="photo-branch"></select><button class="ghost small" id="add-photos">Add photos</button></div>
+        </div>
+        <input type="file" id="photo-input" accept="image/*" multiple hidden>
+        <div class="grid small" id="photo-grid"></div>
+      </section>
+      <section class="card">
+        <div class="page-head"><h2>Reference board</h2><button class="ghost small" id="add-refs">Add references</button></div>
+        <input type="file" id="ref-input" accept="image/*" multiple hidden>
+        <p class="hint">Designs you like. Click one to add it to the current brief.</p>
+        <div class="grid small" id="ref-grid"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- BRAND -->
+  <main id="tab-brand" class="tab">
+    <div class="page narrow">
+      <h1>Brand</h1>
+      <p class="hint">Every design is built from these settings. Change once here and every new design follows.</p>
+      <section class="card">
+        <h2>Identity</h2>
+        <label>School name <input id="b-name"></label>
+        <div class="row"><label>Short name <input id="b-short"></label><label>Phone <input id="b-phone"></label></div>
+        <label>Tagline <input id="b-tagline"></label>
+        <label>Milestone line <input id="b-milestone"></label>
+        <div class="row"><label>Website <input id="b-web"></label><label>Instagram <input id="b-insta"></label></div>
+        <label>Branches (comma separated) <input id="b-branches"></label>
+      </section>
+      <section class="card">
+        <h2>Colours</h2>
+        <div class="colors" id="b-colors"></div>
+      </section>
+      <section class="card">
+        <h2>Typography</h2>
+        <div class="row3">
+          <label>Headings <select id="b-font-heading"></select></label>
+          <label>Body <select id="b-font-body"></select></label>
+          <label>Accent <select id="b-font-accent"></select></label>
+        </div>
+        <div class="type-preview" id="type-preview"></div>
+      </section>
+      <section class="card">
+        <h2>Voice, motifs &amp; rules</h2>
+        <label>Voice <textarea id="b-voice" rows="3"></textarea></label>
+        <label>Motifs <textarea id="b-motifs" rows="2"></textarea></label>
+        <label>Rules <textarea id="b-rules" rows="3"></textarea></label>
+      </section>
+      <div class="actions"><button class="primary" id="b-save">Save brand</button><button class="ghost" id="b-reset">Reset to LMS defaults</button></div>
+    </div>
+  </main>
+
+  <!-- SETTINGS -->
+  <main id="tab-settings" class="tab">
+    <div class="page narrow">
+      <h1>Settings</h1>
+      <section class="card">
+        <h2>Claude API key</h2>
+        <p class="hint">Needed for Design with AI. Get one at console.anthropic.com. It is stored only in this browser's LMCS Design database and sent only to Anthropic.</p>
+        <div class="row"><input id="s-key" type="password" placeholder="sk-ant-..." autocomplete="off"><button class="ghost" id="s-key-save">Save key</button></div>
+        <p id="s-key-status" class="hint"></p>
+      </section>
+      <section class="card">
+        <h2>Database</h2>
+        <p class="hint">LMCS Design keeps its own database in this browser, separate from LMCS Books. Back it up regularly and restore it on another computer.</p>
+        <div class="row">
+          <button class="ghost" id="s-backup">Download backup</button>
+          <button class="ghost" id="s-restore">Restore from backup</button>
+          <input type="file" id="s-restore-input" accept="application/json" hidden>
+        </div>
+        <p id="s-db-status" class="hint"></p>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="picker">
+    <h2 id="picker-title">Pick photos</h2>
+    <div class="grid small" id="picker-grid"></div>
+    <div class="actions"><button class="primary" id="picker-done">Done</button></div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
