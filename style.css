@@ -255,6 +255,9 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 .toast { position: fixed; left: 50%; bottom: 40px; transform: translateX(-50%) translateY(30px); background: #1d1d1f; color: #fff; padding: 16px 28px; border-radius: 999px; font-size: 22px; opacity: 0; transition: all .25s; z-index: 50; pointer-events: none; }
 .toast.on { opacity: 1; transform: translateX(-50%); }
 
+/* ---------- Instruction pill on picture pages (same look as the printed book) ---------- */
+.inst-pill { align-self: flex-start; background: var(--blue); color: #fff; border-radius: 999px; padding: 10px 26px; font-size: 28px; margin-bottom: 12px; }
+
 /* ---------- Narrow screens (portrait panels, phones) ---------- */
 @media (max-width: 1000px) {
   .tiles { grid-template-columns: repeat(2, 1fr); }

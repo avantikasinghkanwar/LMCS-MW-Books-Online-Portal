@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v8';
+  var APP_VERSION = 'm1-v9';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
@@ -826,7 +826,7 @@
     });
     svg += shapeSvg(paths, 8, 18) + '</svg>';
     var html =
-      '<div class="panel grow"><div class="line-scene" id="scene">' + svg + '</div>' +
+      '<div class="panel grow"><div class="inst-pill">☝ ' + esc(it.say) + '</div><div class="line-scene" id="scene">' + svg + '</div>' +
       '<div class="controls"><button class="btn" id="showMe">▶ Show me</button><button class="btn soft" id="say">🔊 Listen</button><button class="btn soft" id="clear">🧽 Clear</button>' +
       (it.word ? '<span class="new-word">New word: <b>' + esc(it.word) + '</b></span>' : '') + '</div></div>';
     return {
