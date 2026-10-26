@@ -74,13 +74,13 @@ var CONTENT = (function () {
 
   // Pre-writing skills: which shape the child traces.
   var SKILLS = {
-    standing: { title: 'Standing Line', shape: 'standing' },
-    sleeping: { title: 'Sleeping Line', shape: 'sleeping' },
-    circle: { title: 'Circle', shape: 'circle' },
-    cross: { title: 'Standing + Sleeping Cross', shape: 'cross' },
-    square: { title: 'Square', shape: 'square' },
-    diagonal: { title: 'Diagonal Line', shape: 'diagonal' },
-    triangle: { title: 'Triangle', shape: 'triangle' }
+    standing: { title: 'Standing Line', excel: 'Standing Line', shape: 'standing' },
+    sleeping: { title: 'Sleeping Line', excel: 'Sleeping Line', shape: 'sleeping' },
+    circle: { title: 'Circle', excel: 'Circle', shape: 'circle' },
+    cross: { title: 'Standing + Sleeping Cross', excel: 'Standing + Sleeping Lines (Cross)', shape: 'cross' },
+    square: { title: 'Square', excel: 'Square', shape: 'square' },
+    diagonal: { title: 'Slanting Line', excel: 'Slanting Line', shape: 'diagonal' },   // named "Diagonal" before 2026-10-26
+    triangle: { title: 'Triangle', excel: 'Triangle', shape: 'triangle' }
   };
 
   // Page order = the printed book. Each entry covers one or two book pages.
@@ -92,25 +92,25 @@ var CONTENT = (function () {
         { type: 'prewriting', skill: 'standing', scene: '🎈', word: 'balloon', say: 'Trace the strings on the balloons.', pages: [2, 3] },
         { type: 'letter', letter: 'A', pages: [4, 5] },
         { type: 'letter', letter: 'B', pages: [6, 7] },
-        { type: 'prewriting', skill: 'standing', scene: '🌧️', word: 'rain', say: 'Trace the raindrops falling down.', pages: [8, 9] },
+        { type: 'prewriting', skill: 'standing', scene: '🌧️', word: 'rain', say: 'Trace the rain.', pages: [8, 9] },
         { type: 'letter', letter: 'C', pages: [10, 11] },
         { type: 'letter', letter: 'D', pages: [12, 13] },
         { type: 'prewriting', skill: 'sleeping', scene: '🚌', word: 'bus', say: 'Trace the road lines to the school.', pages: [14, 15] },
         { type: 'letter', letter: 'E', pages: [16, 17] },
         { type: 'letter', letter: 'F', pages: [18, 19] },
-        { type: 'prewriting', skill: 'sleeping', scene: '🐦', word: 'bird', say: 'Trace the flight lines to the nests.', pages: [20, 21] },
+        { type: 'prewriting', skill: 'sleeping', scene: '🐄', alt: '🐑', word: 'path', say: 'Trace the paths across the grass to each animal.', pages: [20, 21] },
         { type: 'letter', letter: 'G', pages: [22, 23] },
         { type: 'letter', letter: 'H', pages: [24, 25] },
-        { type: 'prewriting', skill: 'circle', scene: '🫧', alt: '🔵', word: 'bubble', say: 'Trace the round bubbles.', pages: [26, 27] },
+        { type: 'prewriting', skill: 'cross', scene: '🏠', word: 'house', say: 'Trace the lines of the walls, windows and door.', pages: [26, 27] },
         { type: 'letter', letter: 'I', pages: [28, 29] },
         { type: 'letter', letter: 'J', pages: [30, 31] },
-        { type: 'prewriting', skill: 'circle', scene: '👕', word: 'button', say: 'Trace the round buttons.', pages: [32, 33] },
+        { type: 'prewriting', skill: 'circle', scene: '🐛', word: 'caterpillar', say: 'Trace the circles of the caterpillar.', pages: [32, 33] },
         { type: 'letter', letter: 'K', pages: [34, 35] },
         { type: 'letter', letter: 'L', pages: [36, 37] },
-        { type: 'prewriting', skill: 'cross', scene: '🪁', alt: '🎏', word: 'kite', say: 'Trace the cross on each kite.', pages: [38, 39] },
+        { type: 'prewriting', skill: 'circle', scene: '🎯', word: 'target', say: 'Trace the circles, one inside the other.', pages: [38, 39] },
         { type: 'letter', letter: 'M', pages: [40, 41] },
         { type: 'letter', letter: 'N', pages: [42, 43] },
-        { type: 'prewriting', skill: 'circle', scene: '🌸', word: 'flower', say: 'Trace the round petals.', pages: [44, 45] },
+        { type: 'prewriting', skill: 'circle', scene: '🌸', word: '', say: 'Trace the round petals.', pages: [44, 45] },
         { type: 'colourletters', pages: [46, 47] }
       ]
     },
@@ -121,7 +121,7 @@ var CONTENT = (function () {
         { type: 'prewriting', skill: 'cross', scene: '🪟', alt: '🏠', word: 'window', say: 'Trace the cross on each window.', pages: [2, 3] },
         { type: 'letter', letter: 'O', pages: [4, 5] },
         { type: 'letter', letter: 'P', pages: [6, 7] },
-        { type: 'prewriting', skill: 'circle', scene: '🚲', word: 'wheel', say: 'Trace the round wheels.', pages: [8, 9] },
+        { type: 'prewriting', skill: 'circle', scene: '😊', word: 'face', say: 'Trace the circles to make a happy face.', pages: [8, 9] },
         { type: 'letter', letter: 'Q', pages: [10, 11] },
         { type: 'letter', letter: 'R', pages: [12, 13] },
         { type: 'prewriting', skill: 'square', scene: '🎁', word: 'gift', say: 'Trace the square on each gift.', pages: [14, 15] },
@@ -130,18 +130,20 @@ var CONTENT = (function () {
         { type: 'prewriting', skill: 'square', scene: '🧱', word: 'block', say: 'Trace the square blocks.', pages: [20, 21] },
         { type: 'letter', letter: 'U', pages: [22, 23] },
         { type: 'letter', letter: 'V', pages: [24, 25] },
-        { type: 'prewriting', skill: 'diagonal', scene: '🛝', alt: '🎢', word: 'slide', say: 'Trace the slanting slides.', pages: [26, 27] },
+        { type: 'prewriting', skill: 'diagonal', scene: '🪁', alt: '🎏', word: 'kite', say: 'Trace the slanting sides of the kite.', pages: [26, 27] },
         { type: 'letter', letter: 'W', pages: [28, 29] },
         { type: 'letter', letter: 'X', pages: [30, 31] },
         { type: 'prewriting', skill: 'diagonal', scene: '⛰️', word: 'mountain', say: 'Trace the slanting mountain sides.', pages: [32, 33] },
         { type: 'letter', letter: 'Y', pages: [34, 35] },
         { type: 'letter', letter: 'Z', pages: [36, 37] },
-        { type: 'prewriting', skill: 'triangle', scene: '⛺', word: 'tent', say: 'Trace the triangle on each tent.', pages: [38, 39] },
-        { type: 'blank', pages: [40, 41] },
+        { type: 'prewriting', skill: 'triangle', scene: '🌲', word: 'tree', say: 'Trace the trees.', pages: [38, 39] },
+        { type: 'tracepractice', sets: [['circle', 'square'], ['diagonal', 'triangle']], pages: [40, 41] },   // two pencil practice pages (was Blank Colouring)
         { type: 'colourletters', pages: [42, 43] }
       ]
     }
   };
+
+  Object.keys(BOOKS).forEach(function (b) { BOOKS[b].items.forEach(function (it) { it.id = 'b' + b + 'p' + it.pages[0]; }); });
 
   // Periwinkle "Phonics Letter X with Four Words" videos. Empty = no video button yet.
   var VIDEOS = { A: 'y6X_8nsZwec', B: 'F4m2w7irgUg' };

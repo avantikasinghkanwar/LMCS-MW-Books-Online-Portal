@@ -79,6 +79,7 @@ h1, h2, .big-title { font-family: "Fredoka", "Nunito", system-ui, sans-serif; ma
 .trace-wrap svg, .trace-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .trace-wrap canvas { touch-action: none; }
 .track { fill: none; stroke: #fff; stroke-linecap: round; stroke-linejoin: round; }
+.guide.faded { stroke-opacity: .2; }
 .guide { fill: none; stroke: var(--theme); stroke-opacity: .45; stroke-dasharray: 2 16; stroke-linecap: round; }
 .anim { fill: none; stroke: var(--theme); stroke-linecap: round; stroke-linejoin: round; }
 .start-dot circle { fill: var(--ink); }

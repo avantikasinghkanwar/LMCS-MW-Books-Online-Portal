@@ -51,7 +51,7 @@ def clips(c):
         for item in book['items']:
             if item['type'] == 'prewriting':
                 skill = c['SKILLS'][item['skill']]['title']
-                out['pw_' + item['word']] = (ENGLISH, '%s. %s' % (skill, item['say']))
+                out['pw_' + item['id']] = (ENGLISH, '%s. %s' % (skill, item['say']))
     return out
 
 

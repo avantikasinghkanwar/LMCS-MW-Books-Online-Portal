@@ -5,7 +5,7 @@
   'use strict';
 
   var C = CONTENT;
-  var APP_VERSION = 'm1-v7';
+  var APP_VERSION = 'm1-v8';
   var app = document.getElementById('app');
   var online = /^https?:/.test(location.protocol);
   // Google sign-in is switched on by putting the sign-in ID in config.js (CLIENT_ID). Until then the old panel-setup screen is used.
@@ -396,6 +396,7 @@
     if (it.type === 'chart') return 'A–Z Chart';
     if (it.type === 'colourletters') return 'Read the Alphabet and Colour';
     if (it.type === 'blank') return 'Free Colouring';
+    if (it.type === 'tracepractice') return 'Tracing Practice';
     return '';
   }
   function itemIcon(it) {
@@ -403,11 +404,13 @@
     if (it.type === 'prewriting') return '<span class="emoji">' + pic(it.scene, it.alt) + '</span>';
     if (it.type === 'chart') return '<span class="emoji">🔤</span>';
     if (it.type === 'colourletters') return '<span class="emoji">🖍️</span>';
+    if (it.type === 'tracepractice') return '<span class="emoji">✏️</span>';
     return '<span class="emoji">🎨</span>';
   }
   function tabsFor(it) {
     if (it.type === 'letter') return [['meet', '1 · Meet ' + it.letter, it.pages[0]], ['words', '2 · Words & game', it.pages[1]], ['activity', '3 · Activity', it.pages[0]]];
     if (it.type === 'prewriting') return [['trace', '1 · Trace the picture', it.pages[0]], ['practice', '2 · Practice', it.pages[1]]];
+    if (it.type === 'tracepractice') return [['p1', 'Page ' + it.pages[0], it.pages[0]], ['p2', 'Page ' + it.pages[1], it.pages[1]]];
     return [['main', '', it.pages.join('–')]];
   }
 
@@ -825,7 +828,7 @@
     var html =
       '<div class="panel grow"><div class="line-scene" id="scene">' + svg + '</div>' +
       '<div class="controls"><button class="btn" id="showMe">▶ Show me</button><button class="btn soft" id="say">🔊 Listen</button><button class="btn soft" id="clear">🧽 Clear</button>' +
-      '<span class="new-word">New word: <b>' + esc(it.word) + '</b></span></div></div>';
+      (it.word ? '<span class="new-word">New word: <b>' + esc(it.word) + '</b></span>' : '') + '</div></div>';
     return {
       html: html,
       init: function () {
@@ -834,33 +837,36 @@
         hideStrokes(svgEl);
         var tracer = makeTracer(scene, '#5B4FE0');
         $('showMe').onclick = function () { tracer.clear(); animateStrokes(svgEl, 1100); };
-        $('say').onclick = function () { play('pw_' + it.word); };
+        $('say').onclick = function () { play('pw_' + it.id); };
         $('clear').onclick = function () { tracer.clear(); hideStrokes(svgEl); };
         return tracer.destroy;
       }
     };
   }
 
-  function renderPractice(it) {
-    var shape = C.SKILLS[it.skill].shape;
+  // Pencil practice page: two rows of dotted shapes to trace, then a "Do it Yourself!" row with faded strokes.
+  function renderPractice(traceShape, diyShape) {
     var svg = '<svg viewBox="0 0 900 500" preserveAspectRatio="xMidYMid meet">';
-    var rows = [30, 190, 350], paths = [], firsts = [];
-    rows.forEach(function (y) {
+    var rows = [30, 190, 350], paths = [], firsts = [], faded = [];
+    rows.forEach(function (y, r) {
       svg += '<line x1="20" x2="880" y1="' + (y + 120) + '" y2="' + (y + 120) + '" stroke="#C9D6E8" stroke-width="3"/>';
       svg += '<line x1="20" x2="880" y1="' + y + '" y2="' + y + '" stroke="#E3EAF3" stroke-width="2"/>';
       for (var c = 0; c < 6; c++) {
-        var p = shapePaths(shape, 50 + c * 140, y + 10, shape === 'sleeping' ? 100 : 100, 100);
-        if (c === 0) firsts = firsts.concat(p); else paths = paths.concat(p);
+        var diy = r === 2;
+        var p = shapePaths(diy ? diyShape : traceShape, 50 + c * 140, y + 10, 100, 100);
+        if (diy) faded = faded.concat(p); else if (c === 0) firsts = firsts.concat(p); else paths = paths.concat(p);
       }
     });
-    // Only the first shape in each row animates; the rest are dotted guides to trace.
+    svg += '<text x="24" y="' + (350 - 6) + '" font-size="22" fill="#8b7bd8" font-family="Nunito, sans-serif" font-weight="800">Do it Yourself!</text>';
+    // Only the first shape in each trace row animates; the rest are dotted guides to trace.
     svg += shapeSvg(firsts, 6, 12);
     paths.forEach(function (d) { svg += '<path class="guide" stroke-width="6" d="' + d + '"/>'; });
+    faded.forEach(function (d) { svg += '<path class="guide faded" stroke-width="6" d="' + d + '"/>'; });
     svg += '</svg>';
     var html =
       '<div class="panel grow"><div class="line-scene ruled" id="scene">' + svg + '</div>' +
       '<div class="controls"><button class="btn" id="showMe">▶ Show me</button><button class="btn soft" id="clear">🧽 Clear</button>' +
-      '<span class="new-word">Trace the dotted shapes, then draw your own</span></div></div>';
+      '<span class="new-word">Trace the dotted shapes, then do it yourself</span></div></div>';
     return {
       html: html,
       init: function () {
@@ -933,7 +939,12 @@
       body = tab === 'words' ? renderWords(L) : tab === 'activity' ? renderActivity(L) : renderMeet(L);
     } else if (it.type === 'prewriting') {
       setTheme('#8b7bd8', '#EFEBFB');
-      body = tab === 'practice' ? renderPractice(it) : renderTrace(it);
+      var sh = C.SKILLS[it.skill].shape;
+      body = tab === 'practice' ? renderPractice(sh, sh) : renderTrace(it);
+    } else if (it.type === 'tracepractice') {
+      setTheme('#8b7bd8', '#EFEBFB');
+      var set = it.sets[tab === 'p2' ? 1 : 0];
+      body = renderPractice(C.SKILLS[set[0]].shape, C.SKILLS[set[1]].shape);
     } else {
       setTheme('#2FB45A', '#E6F7EC');
       body = it.type === 'chart' ? renderChart() : it.type === 'colourletters' ? renderColourLetters() : renderBlank();
@@ -966,6 +977,7 @@
     ],
     chart: ['Point to a letter; children say its name and sound.', 'Tap a letter to check the sound together.'],
     colourletters: ['Children read each letter aloud, then tap it to colour it.', 'Book: colour the letters with crayons.'],
+    tracepractice: ['Pencil practice pages. <b>Show me</b> traces the first shape; children trace the dotted ones with a finger, then use a pencil in the book.', 'The bottom row is <b>Do it Yourself!</b>: the strokes are faded, so children draw the shape on their own.'],
     blank: ['Picture for this page still to be chosen. Use the book.'],
     home: ['Choose the subject, then the book, then the page the class is on.', '<b>Continue where we stopped</b> opens the last page used on this panel.', 'Greyed-out subjects have no books for this class yet.']
   };
