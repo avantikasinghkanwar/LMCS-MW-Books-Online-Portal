@@ -83,6 +83,7 @@ var CONTENT = (function () {
     triangle: { title: 'Triangle', excel: 'Triangle', shape: 'triangle' }
   };
 
+  // The `say` line on each picture page is the printed instruction. FINAL — approved by Avantika 2026-10-26; the source is the Excel Notes column (Instruction: "…").
   // Page order = the printed book. Each entry covers one or two book pages.
   var BOOKS = {
     1: {
